@@ -1,39 +1,127 @@
-# attackscout-cli
+# attackscout-agent: website security check from the server (self-hosted security audit CLI)
 
-[Français](README.fr.md)
+[Français](README.fr.md) | [Documentation](docs/index.md)
 
-Free, open source command-line tool that checks a website **from inside its server**: outdated and end-of-life software, known CVEs, exposed files, file permissions, web server headers, `wp-config.php` and certificates.
+**attackscout-agent is a free, open source, self-hosted security audit CLI.** Run it on a Linux, macOS or Windows server to check a website from the inside: end-of-life software, known CVEs in lockfiles, exposed files in the web root, file permissions, nginx / Apache / IIS security headers, `wp-config.php` and TLS certificate files.
 
-It only reads. It never modifies, deletes or fixes a file, and it sends **nothing** over the network unless you ask for it (`db update`, `--online`).
+- **Read only.** It never modifies, deletes or fixes a file.
+- **Nothing is sent by default.** No telemetry, no update check, no call home. Two explicit options use the network (`db update`, `--online`), described in [Network: what leaves the machine](#network-what-leaves-the-machine).
+- **One static binary**, written in Go. No agent, no account, no service to install.
 
-It complements [AttackScout](https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli), which audits what the Internet sees of a domain. This tool is separate and free; it is not part of the AttackScout service.
+It complements [AttackScout](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli), which audits what the Internet sees of a domain. This tool is separate and free; it is not part of the AttackScout service.
 
-## Install
+## Contents
+
+- [Install](#install-on-linux-macos-and-windows)
+- [Quick start and example output](#quick-start-and-example-output)
+- [What it checks](#what-it-checks)
+- [Options and exit codes](#options-and-exit-codes)
+- [Use it in CI](#use-it-in-ci)
+- [Network: what leaves the machine](#network-what-leaves-the-machine)
+- [FAQ](#faq)
+- [Check your site from the outside too](#check-your-site-from-the-outside-too)
+- [Limits](#limits)
+- [Documentation](#documentation)
+
+## Install on Linux, macOS and Windows
+
+With Go 1.26 or later:
 
 ```sh
-go install github.com/attackscout/attackscout-cli@latest
+go install github.com/attackscout/attackscout-agent@latest
 ```
 
-Prebuilt binaries for Linux, macOS and Windows (amd64 and arm64) are attached to each [GitHub release](https://github.com/attackscout/attackscout-cli/releases), with a `checksums.txt` file. Homebrew: coming soon.
+Prebuilt binaries for Linux, macOS and Windows (amd64 and arm64) are attached to each [GitHub release](https://github.com/AttackScout/attackscout-agent/releases), with a `checksums.txt` file. Archives are named `attackscout-agent_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows).
 
-Requires Go 1.26 or later to build from source.
-
-## Usage
+Linux and macOS (replace the version and the architecture):
 
 ```sh
-# scan with automatic detection of the web root and of nginx / Apache
-attackscout-cli scan
+curl -LO https://github.com/AttackScout/attackscout-agent/releases/download/vX.Y.Z/attackscout-agent_X.Y.Z_linux_amd64.tar.gz
+curl -LO https://github.com/AttackScout/attackscout-agent/releases/download/vX.Y.Z/checksums.txt
+sha256sum --check --ignore-missing checksums.txt
+tar -xzf attackscout-agent_X.Y.Z_linux_amd64.tar.gz
+sudo install attackscout-agent /usr/local/bin/
+```
 
-# explicit paths, French output, fail the CI job on high findings
-attackscout-cli scan --root /var/www/site --nginx /etc/nginx --cert /etc/ssl/site.pem --lang fr --fail-on high
+Windows (PowerShell): download the `.zip` from the release page, check it against `checksums.txt` with `Get-FileHash -Algorithm SHA256`, extract it, and run `.\attackscout-agent.exe scan`.
+
+Homebrew: coming soon. Check the install with `attackscout-agent version`.
+
+## Quick start and example output
+
+```sh
+# automatic detection of the web root and of nginx / Apache
+attackscout-agent scan
+
+# explicit paths, French output, fail the job on high findings
+attackscout-agent scan --root /var/www/site --nginx /etc/nginx --cert /etc/ssl/site.pem --lang fr --fail-on high
 
 # JSON for scripts
-attackscout-cli scan --root /var/www/site --json > report.json
+attackscout-agent scan --root /var/www/site --json > report.json
 
 # download the OSV vulnerability databases once (network), then scan offline
-attackscout-cli db update
-attackscout-cli scan --root /var/www/site --project /srv/app --project /srv/infra
+attackscout-agent db update
+attackscout-agent scan --root /var/www/site --project /srv/app
 ```
+
+The real output below comes from running the tool on the fake WordPress site and the nginx configuration in `testdata/` of this repository, on a Windows machine (hence the "not applicable" line for permissions; on Linux they are checked). It is shortened: the list of findings is cut where marked.
+
+```text
+AttackScout CLI 0.1.0 - local scan, read only
+Network: nothing was sent
+root: wordpress
+nginx: nginx
+
+Checks
+  [fail          ] End of life - End-of-life table embedded in the binary, dated 2026-11-25
+  [not checked   ] CVE (OSV) - CVEs not checked for 5 components that OSV does not track (WordPress, Joomla extensions, ...)
+  [fail          ] Sensitive files
+  [not applicable] File permissions - Not applicable on Windows: Unix permission bits do not exist there and ACLs are not read
+  [fail          ] wp-config.php
+  [fail          ] Web server configuration
+  [fail          ] Certificates
+
+Findings
+  [CRITICAL] sensitive-env: Sensitive environment file in the web root: .env (content not read)
+      wordpress/.env
+      fix: Move the .env file outside the web root, then rotate every secret it contains
+  [CRITICAL] wpconfig-salt-default: wp-config.php keys or salts empty or left at the default value: AUTH_KEY, SECURE_AUTH_KEY (values not shown)
+      wordpress/wp-config.php
+      fix: Generate new keys and salts (wp config shuffle-salts)
+  [HIGH] php-eol: PHP 7.4 is end of life (branch 7.4, since 2022-11-28)
+      configuration hint
+      certainty: medium
+      fix: Upgrade PHP to a supported branch: https://www.php.net/supported-versions.php
+  [MEDIUM] header-hsts-missing: nginx configuration does not set Strict-Transport-Security
+      nginx
+      fix: Send Strict-Transport-Security: max-age=31536000; includeSubDomains on HTTPS (add_header Strict-Transport-Security "..." always;)
+  [...]
+
+Summary: 4 critical, 4 high, 5 medium, 10 low, 0 info
+
+This scan sees the inside of the server. To see what the Internet sees, run the free external audit:
+https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli
+```
+
+With `--fail-on high`, that same run exits with code `1`.
+
+## What it checks
+
+Every finding has a stable identifier, a severity (`info`, `low`, `medium`, `high`, `critical`), a short message and a fix. Each check reports one status: `pass`, `fail`, `not_applicable` or `not_checked`. A check that makes no sense on a system says `not_applicable`; a check that could not run says `not_checked`. Neither is ever shown as `pass`.
+
+| Check | What it looks at | Guide |
+|---|---|---|
+| End of life | PHP, Node.js, .NET, WordPress (core, plugins, themes), Drupal, Joomla, PrestaShop, React, Next.js, against an end-of-life table embedded in the binary | [End-of-life software](docs/end-of-life-software.md) |
+| Known vulnerabilities | npm, Composer, PyPI, NuGet and Go lockfiles, Terraform and OpenTofu providers, matched against [OSV](https://osv.dev) | [Known vulnerabilities (CVE)](docs/known-vulnerabilities-cve.md) |
+| Sensitive files | `.env`, `.git/`, SQL dumps and archives, `phpinfo.php`, logs, private keys, `.htpasswd`, `terraform.tfstate`... Names only, contents are never read | [Exposed files in the web root](docs/exposed-files-web-root.md) |
+| File permissions | World-writable files and directories, `777`, world-readable secrets (Unix only) | [File permissions](docs/file-permissions.md) |
+| Web server configuration | nginx, Apache and IIS: HSTS, CSP, X-Content-Type-Options, frame protection, Referrer-Policy, version disclosure, directory listing | [Security headers](docs/web-server-security-headers.md) |
+| wp-config.php | Default or missing keys and salts, `WP_DEBUG`, `WP_DEBUG_DISPLAY`, `DISALLOW_FILE_EDIT`. Secret values are never printed | [wp-config.php security](docs/wordpress-wp-config-security.md) |
+| Certificates | Local PEM files: expiry, expiring in less than 30 days, expired chain, weak key, SHA-1 or MD5 signature | [Certificate check](docs/ssl-certificate-check.md) |
+
+It reads certificate **files** on disk. It does not open a connection to your site, so it does not test the TLS protocol versions or cipher suites a visitor negotiates.
+
+## Options and exit codes
 
 | Flag | Meaning |
 |---|---|
@@ -45,92 +133,35 @@ attackscout-cli scan --root /var/www/site --project /srv/app --project /srv/infr
 | `--json` | JSON output instead of text |
 | `--fail-on SEV` | Exit with code 1 when a finding is at least `info`, `low`, `medium`, `high` or `critical`. Default `none` |
 | `--lang en\|fr` | Report language. Default `en` |
-| `--online` | Look up CVEs with api.osv.dev instead of the local database (see below) |
-| `--db DIR` | OSV database directory. Default: user cache directory + `attackscout-cli` |
+| `--online` | Look up CVEs with api.osv.dev instead of the local database |
+| `--db DIR` | OSV database directory. Default: user cache directory + `attackscout-agent` |
 
-Exit codes: `0` success, `1` a finding reached `--fail-on` (or `db update` failed for an ecosystem), `2` usage error.
+Commands: `scan`, `db update` (`--db`, `--ecosystems npm,Packagist,PyPI,NuGet,Go`), `version`, `help`.
 
-Every report ends with a link to the free external audit: <https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli>.
+Exit codes: `0` success, `1` a finding reached `--fail-on` (or `db update` failed for an ecosystem), `2` usage error. Full reference: [command line](docs/command-line-reference.md).
 
-## Check statuses
+## Use it in CI
 
-Each check reports one status: `pass`, `fail`, `not_applicable` or `not_checked`. A check that makes no sense on a system says `not_applicable`, never `pass`. A check that could not run (no web root, no configuration, no vulnerability database) says `not_checked`, never `pass`.
+Scan a checked-out project (lockfiles, Terraform files, web root) and fail the job on high findings:
 
-## Checks
+```yaml
+# .github/workflows/server-check.yml
+name: security-check
+on: [push]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
+      - run: go install github.com/attackscout/attackscout-agent@latest
+      - run: attackscout-agent db update            # network, downloads the OSV archives
+      - run: attackscout-agent scan --root . --project . --fail-on high
+```
 
-Every finding has a stable identifier, a severity (`info`, `low`, `medium`, `high`, `critical`), a short message and a fix.
-
-### 1. Versions and end of life (`end-of-life`)
-
-| What | Where the version comes from |
-|---|---|
-| PHP | `php -v`, else configuration hints (`php8.1-fpm` sockets, `/etc/php/X.Y`) |
-| Node.js | `node --version`, else `.nvmrc` / `.node-version` |
-| .NET | `dotnet --list-runtimes`, else `<TargetFramework>` in `.csproj` files |
-| WordPress | `wp-includes/version.php`, plugins (plugin headers), themes (`style.css`) |
-| Drupal | `core/lib/Drupal.php` or `includes/bootstrap.inc`, contrib modules and themes (`*.info.yml`) |
-| Joomla | `administrator/manifests/files/joomla.xml`, components, modules, plugins, templates (XML manifests) |
-| PrestaShop | `app/AppKernel.php` or `config/settings.inc.php` |
-| React, Next.js | lockfiles, else `node_modules/react/package.json` and `node_modules/next/package.json` |
-
-IDs: `<product>-eol` (high), `<product>-eol-soon` (medium, less than 90 days), `<product>-patch-behind` (low), `<product>-version` (info).
-
-The end-of-life table is **embedded in the binary** (`go:embed`) and carries its date (`internal/eol/data.json`, printed in every report). It is based on endoflife.date (MIT) and vendor pages; a vendor date wins when it is earlier. A new release of the tool brings a new table.
-
-### 2. Known vulnerabilities (`vulnerabilities`)
-
-The inventory is matched against the [OSV](https://osv.dev) database with Google's [osv-scalibr](https://github.com/google/osv-scalibr) library (Apache-2.0, version pinned in `go.mod`). Lockfiles are parsed by the osv-scalibr extractors:
-
-| Ecosystem | Files |
-|---|---|
-| npm | `package-lock.json`, `yarn.lock` (v1 and Berry), `pnpm-lock.yaml` |
-| Composer (Packagist) | `composer.lock` |
-| PyPI | `requirements.txt` |
-| NuGet | `packages.lock.json`, `packages.config`, `*.csproj` |
-| Go | Terraform and OpenTofu providers and binaries (see below) |
-
-Each CVE comes with:
-
-- **risk**: the CVSS v3.x base score computed from the vector, mapped to a severity (9.0+ critical, 7.0+ high, 4.0+ medium, else low). Without a v3 vector, the severity given by the advisory database is used; malicious packages (`MAL-`) are critical;
-- **certainty**: `high` when the exact version was read (lockfile, version header, command output), `medium` when it was deduced (a constraint such as `requests>=2.20`, a `.csproj` reference, a configuration hint);
-- **fix**: the smallest fixed version above the installed one (OSV `fixed` event), in plain words: "Upgrade lodash to 4.17.21 or later".
-
-Components that OSV does not track (WordPress core, plugins and themes, Joomla extensions, Drupal 7 modules) are listed with "CVEs not checked", never "no CVE".
-
-ID: `vulnerable-component`.
-
-#### Terraform and OpenTofu (inventory only)
-
-The tool lists versions, it does not analyse the configuration:
-
-- providers from `.terraform.lock.hcl` (exact version, certainty high) and from `required_providers` blocks in `.tf` files (smallest version allowed by the constraint, certainty medium);
-- Terraform from `required_version`, `.terraform-version` or `terraform version`; OpenTofu from `.opentofu-version` or `tofu version`.
-
-They are looked up in the OSV Go ecosystem: `github.com/<namespace>/terraform-provider-<name>`, `github.com/hashicorp/terraform`, `github.com/opentofu/opentofu`. When OSV does not know a module, the report says "CVEs not checked".
-
-### 3. Sensitive files in the web root (`sensitive-files`)
-
-Only names are read; contents are never opened or printed.
-
-`sensitive-env` (`.env`, `.env.*`, critical), `sensitive-env-sample` (low), `sensitive-vcs` (`.git/`, `.svn/`, `.hg/`, `.bzr/`, high), `sensitive-backup` (`.sql`, `.zip`, `.tar.gz`, `.tgz`, `.7z`, `.rar`, `.bak`, `.old`, `.orig`, `.swp`, `~`...; critical for database dumps and `wp-config` / `.env` copies), `sensitive-phpinfo` (`phpinfo.php`, `info.php`), `sensitive-ds-store`, `sensitive-composer` (`composer.json` / `composer.lock` at the root), `sensitive-auth-json`, `sensitive-log`, `sensitive-htpasswd`, `sensitive-private-key` (`.key`, `.pem`, `.p12`, `id_rsa`...), `sensitive-tfstate`.
-
-### 4. File permissions (`permissions`)
-
-`perm-file-world-writable`, `perm-dir-777`, `perm-dir-world-writable` (without sticky bit), `perm-secret-world-readable` (`wp-config.php`, `.env`, `settings.php`, `configuration.php`, `auth.json`...). On Windows the check is `not_applicable`: Unix permission bits do not exist there, and ACLs are not read.
-
-### 5. Web server configuration (`web-server`)
-
-nginx (enabled sites only), Apache (plus `.htaccess` of the web root) and IIS (`web.config` of the web root, read with `encoding/xml`; if it cannot be parsed the IIS part is `not_checked`).
-
-`header-hsts-missing` (medium), `header-csp-missing`, `header-xcto-missing`, `header-frame-missing` (X-Frame-Options or CSP `frame-ancestors`), `header-referrer-missing`, `server-tokens` (`server_tokens`, `ServerTokens`, IIS `removeServerHeader`), `server-signature` (`ServerSignature`), `x-powered-by` (IIS), `directory-listing` (`autoindex on`, `Options Indexes`, `directoryBrowse`).
-
-### 6. wp-config.php (`wp-config`)
-
-`wpconfig-salt-default` (keys or salts empty or "put your unique phrase here", critical), `wpconfig-salt-missing` (high), `wpconfig-debug`, `wpconfig-debug-display` (`WP_DEBUG_DISPLAY` true, or `WP_DEBUG` true without it), `wpconfig-file-edit` (`DISALLOW_FILE_EDIT` absent). Secret values are never printed. `wp-config.php` is also looked for one level above the web root, as WordPress allows.
-
-### 7. Certificates (`certificates`)
-
-PEM files from `--cert` and from `ssl_certificate` / `SSLCertificateFile`: `cert-expired` (critical), `cert-expiring` (less than 30 days, high), `cert-chain-expired`, `cert-weak-key` (RSA under 2048 bits, ECDSA under 256, DSA), `cert-weak-signature` (MD5, SHA-1), `cert-valid` (info). Private keys in the same file are skipped and never printed.
+The step fails with exit code `1` when a finding is `high` or `critical`. On a server, the same command works from cron or a deployment hook. More examples: [use in CI](docs/ci-integration.md).
 
 ## Network: what leaves the machine
 
@@ -138,45 +169,74 @@ PEM files from `--cert` and from `ssl_certificate` / `SSLCertificateFile`: `cert
 
 Two explicit commands use the network, and only them:
 
-- `attackscout-cli db update` downloads the OSV archives (`all.zip`) of npm, Packagist, PyPI, NuGet and Go from `https://osv-vulnerabilities.storage.googleapis.com`, with the osv-scalibr download mechanism, into the user cache directory (`--db` to change it). Nothing about your server is sent. Pick ecosystems with `--ecosystems npm,Packagist`.
-- `attackscout-cli scan --online` sends to `https://api.osv.dev` (`/v1/querybatch`) the **name, version and ecosystem** of each package, then fetches the details of the matching vulnerabilities by their identifiers (`/v1/vulns/<id>`). No path, file name, host name or domain name is sent. This is what the osv-scalibr `osvdev` enricher sends (`pkgToQuery`), and a test checks it. Local npm packages (`file:` links) are not sent.
+- `attackscout-agent db update` downloads the OSV archives (`all.zip`) of npm, Packagist, PyPI, NuGet and Go from `https://osv-vulnerabilities.storage.googleapis.com` into the user cache directory (`--db` to change it). Nothing about your server is sent.
+- `attackscout-agent scan --online` sends to `https://api.osv.dev` the **name, version and ecosystem** of each package, then fetches the details of the matching vulnerabilities by their identifiers. No path, file name, host name or domain name is sent. Local npm packages (`file:` links) are not sent.
 
-Without a local database and without `--online`, the report says "CVEs not checked: run attackscout-cli db update" instead of claiming there is no CVE.
+Without a local database and without `--online`, the report says "CVEs not checked" instead of claiming there is no CVE.
 
-How it is guaranteed:
+How this is guaranteed: `nonetwork_test.go` parses every source file and only `internal/vulns` may import a networking package; `TestDefaultScanUsesNoNetwork` runs a full default scan with a guard on `http.DefaultTransport` and fails on any request. Details: [network and offline use](docs/offline-and-network.md).
 
-- `nonetwork_test.go` parses every source file: only `internal/vulns` may import a networking package, and its network functions are called only by `onlineMatcher` (`--online`) and `runDBUpdate` (`db update`);
-- `internal/cli.TestDefaultScanUsesNoNetwork` replaces `http.DefaultTransport` with a guard that counts every request, runs a full default scan with a local database, and fails on any request;
-- on the default path, osv-scalibr receives an HTTP client that refuses every request.
+## FAQ
+
+### How do I check my website security from the server?
+
+Install `attackscout-agent` on the server and run `attackscout-agent scan`. It detects the web root and the nginx or Apache configuration, then reports end-of-life software, exposed files, risky permissions, missing security headers and certificate problems, each with a fix.
+
+### Is there a free, open source, self-hosted security audit tool for a web server?
+
+This one is MIT-licensed, free, and runs locally with no account. It checks the server side only; to see what visitors and scanners see, use an external scan too (see below).
+
+### Does it send my data anywhere?
+
+Not by default. The default scan makes no network request, and a test fails if it does. `db update` downloads public vulnerability data and sends nothing about your server. `--online` sends package names, versions and ecosystems to api.osv.dev, nothing else.
+
+### How do I check for exposed .env, .git or backup files in the web root?
+
+`scan` walks the web root (ten levels deep, `node_modules` and `vendor` skipped) and reports `.env`, `.git/`, SQL dumps, archives, `phpinfo.php`, logs and private keys by name. It never opens their contents. See [exposed files](docs/exposed-files-web-root.md).
+
+### How do I check security headers (HSTS, CSP) in nginx or Apache?
+
+`scan` reads your nginx, Apache and IIS configuration files and reports headers that are not set. It reads the configuration, it does not request your site, so a header added by a proxy or CDN in front of the server is not seen. See [security headers](docs/web-server-security-headers.md).
+
+### Can it check the TLS certificate of my server?
+
+It checks PEM certificate files: those you pass with `--cert` and those named by `ssl_certificate` or `SSLCertificateFile`. It reports expiry, a certificate expiring in under 30 days, an expired chain, weak keys and SHA-1 or MD5 signatures. It does not connect to the site. See [certificate check](docs/ssl-certificate-check.md).
+
+### Can I use it in a CI pipeline?
+
+Yes. Use `--fail-on high` (or another severity) and the job fails with exit code `1`. Use `--json` to keep the report as an artifact. See [use in CI](docs/ci-integration.md).
+
+### Does it work on Windows?
+
+Yes. It runs on Windows and checks IIS `web.config`, nginx and Apache. File permissions are reported as `not_applicable` there, because Unix permission bits do not exist on Windows and ACLs are not read.
+
+## Check your site from the outside too
+
+This tool sees the inside of your server. It cannot see what a visitor or a scanner sees: the headers your proxy or CDN actually sends, what is reachable from the Internet, or the certificate actually served. For that, run the external audit of your domain at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli).
 
 ## Limits
 
 - Version comparison is done by osv-scalibr: SemVer for npm, Composer rules for Packagist, PEP 440 for PyPI, NuGet and Go rules. Composer branch names (`dev-main`) cannot be compared.
-- A constraint (`requests>=2.20`, `.csproj` reference, Terraform `~> 5.0`) is replaced by its smallest version: certainty medium, results may differ from what is installed.
+- A constraint (`requests>=2.20`, `.csproj` reference, Terraform `~> 5.0`) is replaced by its smallest version: certainty `medium`.
 - `vendor/composer/installed.json` is not read: `composer.lock` is.
-- OSV does not cover WordPress, Joomla extensions or PHP itself: those versions are checked for end of life only.
+- OSV does not cover WordPress, Joomla extensions or PHP itself: those versions are checked for end of life only, and reported as "CVEs not checked".
+- Terraform and OpenTofu: versions are listed, the configuration is not analysed. [tfsec](https://github.com/aquasecurity/tfsec) and [Checkov](https://github.com/bridgecrewio/checkov) do that.
 - The end-of-life table is as fresh as the release you run.
 - Permissions are not checked on Windows.
 
-## Ideas, not in this version
+## Documentation
 
-- Terraform configuration analysis: [tfsec](https://github.com/aquasecurity/tfsec) and [Checkov](https://github.com/bridgecrewio/checkov) already do it well. This tool only lists Terraform versions.
-- Homebrew tap.
+[Index](docs/index.md): [end-of-life software](docs/end-of-life-software.md), [known vulnerabilities](docs/known-vulnerabilities-cve.md), [exposed files](docs/exposed-files-web-root.md), [file permissions](docs/file-permissions.md), [security headers](docs/web-server-security-headers.md), [wp-config.php](docs/wordpress-wp-config-security.md), [certificates](docs/ssl-certificate-check.md), [CI](docs/ci-integration.md), [network and offline use](docs/offline-and-network.md), [command line](docs/command-line-reference.md).
 
 ## Development
 
 ```sh
 go test ./...
 go vet ./...
-go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run ./...
 ```
 
-Fixtures live in `testdata/` (fake WordPress, Drupal, Joomla and PrestaShop sites, nginx, Apache and IIS configurations, lockfiles, Terraform files) and `internal/vulns/testdata/` (OSV records). Certificates are generated during the tests. Tests never use the network: `db update` and `--online` are tested against local `httptest` servers.
+Fixtures live in `testdata/` (fake WordPress, Drupal, Joomla and PrestaShop sites, nginx, Apache and IIS configurations, lockfiles, Terraform files). Tests never use the network: `db update` and `--online` are tested against local `httptest` servers.
 
 ## License
 
 MIT, see [LICENSE](LICENSE). Third-party components are listed in [NOTICE](NOTICE): osv-scalibr and the OSV bindings are under the Apache License 2.0, which is compatible with the MIT license of this tool.
-
----
-
-This tool sees the inside of your server. To see what the Internet sees, run the free external audit: <https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli>
