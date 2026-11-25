@@ -1,0 +1,11 @@
+{
+  "id": "GHSA-w248-ffj2-4v5q",
+  "aliases": ["CVE-2022-31090"],
+  "summary": "Change in curl options in guzzle",
+  "severity": [{"type": "CVSS_V4", "score": "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"}],
+  "affected": [{
+    "package": {"ecosystem": "Packagist", "name": "guzzlehttp/guzzle"},
+    "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "7.0.0"}, {"fixed": "7.4.5"}]}]
+  }],
+  "database_specific": {"severity": "MODERATE"}
+}

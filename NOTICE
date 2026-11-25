@@ -1,0 +1,37 @@
+attackscout-cli
+Copyright (c) 2026 AttackScout
+Licensed under the MIT License (see LICENSE).
+
+This product includes third-party software. The main components are listed
+below; the exact versions are pinned in go.mod and go.sum.
+
+OSV-SCALIBR (github.com/google/osv-scalibr), v0.5.3
+  Copyright Google LLC. Licensed under the Apache License, Version 2.0.
+  Used to parse lockfiles and to match packages against the OSV database.
+
+OSV schema Go bindings (github.com/ossf/osv-schema/bindings/go)
+  Copyright the OpenSSF OSV authors. Licensed under the Apache License, Version 2.0.
+
+OSV.dev Go bindings (osv.dev/bindings/go)
+  Copyright Google LLC. Licensed under the Apache License, Version 2.0.
+
+gRPC-Go (google.golang.org/grpc)
+  Copyright 2014 gRPC authors. Licensed under the Apache License, Version 2.0.
+
+Go protocol buffers (google.golang.org/protobuf)
+  Copyright 2018 The Go Authors. BSD 3-Clause License.
+
+The other modules linked into the binary (listed by
+"go list -deps -f '{{with .Module}}{{.Path}} {{.Version}}{{end}}' .") are
+under the Apache License 2.0, MIT, BSD or ISC licenses. Their license texts
+are in their module sources.
+
+The Apache License, Version 2.0 is available at
+http://www.apache.org/licenses/LICENSE-2.0. It is compatible with the MIT
+License of this tool: the Apache-2.0 components keep their own license and
+notices, and this NOTICE file is distributed with every release archive.
+
+End-of-life data (internal/eol/data.json) is based on endoflife.date
+(https://endoflife.date, MIT License) and on vendor support pages.
+Vulnerability data downloaded by "db update" or read with "--online" comes
+from OSV (https://osv.dev); each source database keeps its own license.

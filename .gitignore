@@ -1,0 +1,6 @@
+/dist/
+/attackscout-cli
+/attackscout-cli.exe
+*.test
+*.out
+coverage.*

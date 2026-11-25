@@ -1,0 +1,5 @@
+{
+  "id": "MAL-2025-0001",
+  "summary": "Malicious code in example-evil",
+  "affected": [{"package": {"ecosystem": "npm", "name": "example-evil"}, "versions": ["1.0.0"]}]
+}

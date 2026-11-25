@@ -1,0 +1,530 @@
+{
+ "updated": "2026-11-25",
+ "source": "endoflife.date (MIT) and vendor support pages; vendor dates win when earlier. Branches without a date are listed as supported or ended according to the vendor policy on the table date.",
+ "products": {
+  "php": {
+   "label": "PHP",
+   "link": "https://www.php.net/supported-versions.php",
+   "cycles": [
+    {
+     "cycle": "8.5",
+     "eol": "2029-12-31",
+     "latest": "8.5.12"
+    },
+    {
+     "cycle": "8.4",
+     "eol": "2028-12-31",
+     "latest": "8.4.27"
+    },
+    {
+     "cycle": "8.3",
+     "eol": "2027-12-31",
+     "latest": "8.3.36"
+    },
+    {
+     "cycle": "8.2",
+     "eol": "2026-12-31",
+     "latest": "8.2.35"
+    },
+    {
+     "cycle": "8.1",
+     "eol": "2025-12-31",
+     "latest": "8.1.34"
+    },
+    {
+     "cycle": "8.0",
+     "eol": "2023-11-26",
+     "latest": "8.0.30"
+    },
+    {
+     "cycle": "7.4",
+     "eol": "2022-11-28",
+     "latest": "7.4.33"
+    },
+    {
+     "cycle": "7.3",
+     "eol": "2021-12-06",
+     "latest": "7.3.33"
+    },
+    {
+     "cycle": "7.2",
+     "eol": "2020-11-30",
+     "latest": "7.2.34"
+    },
+    {
+     "cycle": "7.1",
+     "eol": "2019-12-01",
+     "latest": "7.1.33"
+    },
+    {
+     "cycle": "7.0",
+     "eol": "2019-01-10",
+     "latest": "7.0.33"
+    },
+    {
+     "cycle": "5",
+     "eol": "2018-12-31",
+     "latest": "5.6.40"
+    },
+    {
+     "cycle": "4",
+     "eol": "2008-08-07",
+     "latest": "4.4.9"
+    }
+   ]
+  },
+  "wordpress": {
+   "label": "WordPress",
+   "link": "https://wordpress.org/download/releases/",
+   "cycles": [
+    {
+     "cycle": "7.1",
+     "latest": "7.1.4"
+    },
+    {
+     "cycle": "7.0",
+     "latest": "7.0.8"
+    },
+    {
+     "cycle": "6.9",
+     "latest": "6.9.11"
+    },
+    {
+     "cycle": "6.8",
+     "latest": "6.8.12"
+    },
+    {
+     "cycle": "6.7",
+     "latest": "6.7.11"
+    },
+    {
+     "cycle": "6.6",
+     "latest": "6.6.11"
+    },
+    {
+     "cycle": "6.5",
+     "latest": "6.5.14"
+    },
+    {
+     "cycle": "6.4",
+     "latest": "6.4.14"
+    },
+    {
+     "cycle": "6.3",
+     "latest": "6.3.14"
+    },
+    {
+     "cycle": "6.2",
+     "latest": "6.2.15"
+    },
+    {
+     "cycle": "6.1",
+     "latest": "6.1.16"
+    },
+    {
+     "cycle": "6.0",
+     "latest": "6.0.18"
+    },
+    {
+     "cycle": "5.9",
+     "latest": "5.9.20"
+    },
+    {
+     "cycle": "5.8",
+     "latest": "5.8.19"
+    },
+    {
+     "cycle": "5.7",
+     "latest": "5.7.21"
+    },
+    {
+     "cycle": "5.6",
+     "latest": "5.6.23"
+    },
+    {
+     "cycle": "5.5",
+     "latest": "5.5.24"
+    },
+    {
+     "cycle": "5.4",
+     "latest": "5.4.25"
+    },
+    {
+     "cycle": "5.3",
+     "latest": "5.3.27"
+    },
+    {
+     "cycle": "5.2",
+     "latest": "5.2.30"
+    },
+    {
+     "cycle": "5.1",
+     "latest": "5.1.28"
+    },
+    {
+     "cycle": "5.0",
+     "latest": "5.0.31"
+    },
+    {
+     "cycle": "4.9",
+     "latest": "4.9.35"
+    },
+    {
+     "cycle": "4.8",
+     "latest": "4.8.34"
+    },
+    {
+     "cycle": "4.7",
+     "latest": "4.7.39"
+    },
+    {
+     "cycle": "4.6",
+     "eol": "2025-07-31",
+     "latest": "4.6.30"
+    },
+    {
+     "cycle": "4.5",
+     "eol": "2025-07-31",
+     "latest": "4.5.33"
+    },
+    {
+     "cycle": "4.4",
+     "eol": "2025-07-31",
+     "latest": "4.4.34"
+    },
+    {
+     "cycle": "4.3",
+     "eol": "2025-07-31",
+     "latest": "4.3.35"
+    },
+    {
+     "cycle": "4.2",
+     "eol": "2025-07-31",
+     "latest": "4.2.39"
+    },
+    {
+     "cycle": "4.1",
+     "eol": "2025-07-31",
+     "latest": "4.1.42"
+    },
+    {
+     "cycle": "4.0",
+     "eol": "2022-12-01",
+     "latest": "4.0.38"
+    },
+    {
+     "cycle": "3",
+     "eol": "2022-12-01"
+    },
+    {
+     "cycle": "2",
+     "ended": true
+    }
+   ]
+  },
+  "drupal": {
+   "label": "Drupal",
+   "link": "https://www.drupal.org/about/core/policies/core-release-cycles/schedule",
+   "cycles": [
+    {
+     "cycle": "11.4",
+     "eol": "2027-07-07",
+     "latest": "11.4.12"
+    },
+    {
+     "cycle": "11.3",
+     "eol": "2026-12-16",
+     "latest": "11.3.21"
+    },
+    {
+     "cycle": "11.2",
+     "eol": "2026-07-01",
+     "latest": "11.2.14"
+    },
+    {
+     "cycle": "11.1",
+     "eol": "2025-12-10",
+     "latest": "11.1.10"
+    },
+    {
+     "cycle": "11.0",
+     "eol": "2025-06-16",
+     "latest": "11.0.13"
+    },
+    {
+     "cycle": "10.6",
+     "eol": "2026-12-09",
+     "latest": "10.6.21"
+    },
+    {
+     "cycle": "10.5",
+     "eol": "2026-07-01",
+     "latest": "10.5.12"
+    },
+    {
+     "cycle": "10.4",
+     "eol": "2025-12-10",
+     "latest": "10.4.10"
+    },
+    {
+     "cycle": "10.3",
+     "eol": "2025-06-16",
+     "latest": "10.3.14"
+    },
+    {
+     "cycle": "10.2",
+     "eol": "2024-12-17",
+     "latest": "10.2.12"
+    },
+    {
+     "cycle": "10.1",
+     "eol": "2024-06-20",
+     "latest": "10.1.8"
+    },
+    {
+     "cycle": "10.0",
+     "eol": "2023-12-15",
+     "latest": "10.0.11"
+    },
+    {
+     "cycle": "9",
+     "eol": "2023-11-01",
+     "latest": "9.5.11"
+    },
+    {
+     "cycle": "8",
+     "eol": "2021-11-02",
+     "latest": "8.9.20"
+    },
+    {
+     "cycle": "7",
+     "eol": "2025-01-05",
+     "latest": "7.103"
+    },
+    {
+     "cycle": "6",
+     "eol": "2016-02-24"
+    }
+   ]
+  },
+  "joomla": {
+   "label": "Joomla",
+   "link": "https://developer.joomla.org/roadmap.html",
+   "cycles": [
+    {
+     "cycle": "6"
+    },
+    {
+     "cycle": "5"
+    },
+    {
+     "cycle": "4",
+     "eol": "2025-10-17"
+    },
+    {
+     "cycle": "3",
+     "eol": "2023-08-17"
+    },
+    {
+     "cycle": "2",
+     "ended": true
+    },
+    {
+     "cycle": "1",
+     "ended": true
+    }
+   ]
+  },
+  "prestashop": {
+   "label": "PrestaShop",
+   "link": "https://build.prestashop-project.org/",
+   "cycles": [
+    {
+     "cycle": "9"
+    },
+    {
+     "cycle": "8"
+    },
+    {
+     "cycle": "1.7"
+    },
+    {
+     "cycle": "1.6",
+     "ended": true
+    },
+    {
+     "cycle": "1.5",
+     "ended": true
+    }
+   ]
+  },
+  "nodejs": {
+   "label": "Node.js",
+   "link": "https://nodejs.org/en/about/previous-releases",
+   "cycles": [
+    {
+     "cycle": "25",
+     "eol": "2026-06-01"
+    },
+    {
+     "cycle": "24",
+     "eol": "2028-04-30"
+    },
+    {
+     "cycle": "23",
+     "eol": "2025-06-01"
+    },
+    {
+     "cycle": "22",
+     "eol": "2027-04-30"
+    },
+    {
+     "cycle": "21",
+     "eol": "2024-06-01"
+    },
+    {
+     "cycle": "20",
+     "eol": "2026-04-30"
+    },
+    {
+     "cycle": "19",
+     "eol": "2023-06-01"
+    },
+    {
+     "cycle": "18",
+     "eol": "2025-04-30"
+    },
+    {
+     "cycle": "16",
+     "eol": "2023-09-11"
+    },
+    {
+     "cycle": "14",
+     "eol": "2023-04-30"
+    },
+    {
+     "cycle": "12",
+     "eol": "2022-04-30"
+    },
+    {
+     "cycle": "10",
+     "eol": "2021-04-30"
+    },
+    {
+     "cycle": "8",
+     "eol": "2019-12-31"
+    }
+   ]
+  },
+  "dotnet": {
+   "label": ".NET",
+   "link": "https://dotnet.microsoft.com/platform/support/policy/dotnet-core",
+   "cycles": [
+    {
+     "cycle": "10",
+     "eol": "2028-11-14"
+    },
+    {
+     "cycle": "9",
+     "eol": "2026-11-10"
+    },
+    {
+     "cycle": "8",
+     "eol": "2026-11-10"
+    },
+    {
+     "cycle": "7",
+     "eol": "2024-05-14"
+    },
+    {
+     "cycle": "6",
+     "eol": "2024-11-12"
+    },
+    {
+     "cycle": "5",
+     "eol": "2022-05-10"
+    },
+    {
+     "cycle": "3.1",
+     "eol": "2022-12-13"
+    },
+    {
+     "cycle": "3.0",
+     "eol": "2020-03-03"
+    },
+    {
+     "cycle": "2",
+     "ended": true
+    },
+    {
+     "cycle": "1",
+     "ended": true
+    }
+   ]
+  },
+  "react": {
+   "label": "React",
+   "link": "https://react.dev/versions",
+   "cycles": [
+    {
+     "cycle": "19"
+    },
+    {
+     "cycle": "18"
+    },
+    {
+     "cycle": "17",
+     "ended": true
+    },
+    {
+     "cycle": "16",
+     "ended": true
+    },
+    {
+     "cycle": "15",
+     "ended": true
+    },
+    {
+     "cycle": "0",
+     "ended": true
+    }
+   ]
+  },
+  "nextjs": {
+   "label": "Next.js",
+   "link": "https://nextjs.org/support-policy",
+   "cycles": [
+    {
+     "cycle": "16"
+    },
+    {
+     "cycle": "15"
+    },
+    {
+     "cycle": "14",
+     "ended": true
+    },
+    {
+     "cycle": "13",
+     "ended": true
+    },
+    {
+     "cycle": "12",
+     "ended": true
+    },
+    {
+     "cycle": "11",
+     "ended": true
+    },
+    {
+     "cycle": "10",
+     "ended": true
+    },
+    {
+     "cycle": "9",
+     "ended": true
+    }
+   ]
+  }
+ }
+}

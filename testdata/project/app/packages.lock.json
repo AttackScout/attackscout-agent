@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net6.0": {
+      "System.Text.Json": {"type": "Direct", "requested": "[6.0.0, )", "resolved": "6.0.0", "contentHash": "x"}
+    }
+  }
+}

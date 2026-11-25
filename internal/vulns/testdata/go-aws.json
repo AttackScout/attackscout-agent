@@ -1,0 +1,10 @@
+{
+  "id": "GO-2099-0001",
+  "aliases": ["CVE-2099-0001", "GHSA-xxxx-yyyy-zzzz"],
+  "summary": "Example issue in the AWS provider",
+  "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:H/I:H/A:H"}],
+  "affected": [{
+    "package": {"ecosystem": "Go", "name": "github.com/hashicorp/terraform-provider-aws"},
+    "ranges": [{"type": "SEMVER", "events": [{"introduced": "0"}, {"fixed": "5.40.0"}]}]
+  }]
+}

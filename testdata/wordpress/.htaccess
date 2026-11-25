@@ -1,0 +1,2 @@
+Header always set X-Frame-Options SAMEORIGIN
+Options +Indexes

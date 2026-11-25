@@ -1,0 +1,13 @@
+{
+  "id": "GHSA-fr5h-rqp8-mj6g",
+  "aliases": ["CVE-2024-34351"],
+  "summary": "Server-Side Request Forgery in Server Actions",
+  "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:N/A:N"}],
+  "affected": [{
+    "package": {"ecosystem": "npm", "name": "next"},
+    "ranges": [{"type": "SEMVER", "events": [{"introduced": "13.4.0"}, {"fixed": "14.1.1"}]}]
+  }, {
+    "package": {"ecosystem": "npm", "name": "next"},
+    "ranges": [{"type": "SEMVER", "events": [{"introduced": "13.0.0"}, {"fixed": "13.5.7"}]}]
+  }]
+}
