@@ -1,4 +1,4 @@
-module github.com/attackscout/attackscout-cli
+module github.com/attackscout/attackscout-agent
 
 go 1.26.3
 

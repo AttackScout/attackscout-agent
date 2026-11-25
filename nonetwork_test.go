@@ -27,7 +27,7 @@ import (
 
 var networkImports = []string{"net", "net/http", "net/url", "net/rpc", "net/smtp", "net/mail", "crypto/tls", "google.golang.org/grpc", "osv.dev/bindings/go/osvdev"}
 
-const vulnsPkg = "github.com/attackscout/attackscout-cli/internal/vulns"
+const vulnsPkg = "github.com/attackscout/attackscout-agent/internal/vulns"
 
 func sources(t *testing.T) map[string]*ast.File {
 	t.Helper()
@@ -117,7 +117,7 @@ func TestNetworkPathsAreExplicit(t *testing.T) {
 
 func TestNoHostsInCode(t *testing.T) {
 	allowedHosts := []string{
-		"https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli",
+		"https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent",
 		"https://osv-vulnerabilities.storage.googleapis.com",
 	}
 	for p, f := range sources(t) {

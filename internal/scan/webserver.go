@@ -10,7 +10,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
 )
 
 // ConfFile is one configuration file, comments removed.

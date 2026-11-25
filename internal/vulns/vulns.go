@@ -1,7 +1,7 @@
 // Package vulns matches the inventory against the OSV database with the
 // osv-scalibr library (Apache-2.0).
 //
-// This is the only package of attackscout-cli that can open a network
+// This is the only package of attackscout-agent that can open a network
 // connection, and only on two explicit paths: Update ("db update") and
 // Online ("--online"). The default path, Offline, reads local archives and
 // gives the library an HTTP client that refuses every request.
@@ -30,14 +30,14 @@ import (
 	"google.golang.org/grpc"
 	osvdevclient "osv.dev/bindings/go/osvdev"
 
-	"github.com/attackscout/attackscout-cli/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
 )
 
 // Default remote locations, used only by Update and Online.
 const (
 	DefaultArchiveHost = "https://osv-vulnerabilities.storage.googleapis.com"
 	DefaultAPI         = osvdevclient.DefaultBaseURL
-	userAgent          = "attackscout-cli"
+	userAgent          = "attackscout-agent"
 )
 
 // Vuln is one vulnerability affecting a component.
@@ -133,7 +133,7 @@ func DefaultDir() string {
 	if err != nil {
 		d = os.TempDir()
 	}
-	return filepath.Join(d, "attackscout-cli")
+	return filepath.Join(d, "attackscout-agent")
 }
 
 // Offline matches against archives downloaded earlier by Update. It never
@@ -240,7 +240,7 @@ func Update(ctx context.Context, dir, remote string, c *http.Client, ecosystems 
 	for _, eco := range ecosystems {
 		e, err := osvlocal.New(localConfig(dir, remote, true, c))
 		if err == nil {
-			inv := &scalibrinv.Inventory{Packages: []*extractor.Package{{Name: "attackscout-cli-db-update", Version: "0.0.0", PURLType: inventory.PURLType(eco)}}}
+			inv := &scalibrinv.Inventory{Packages: []*extractor.Package{{Name: "attackscout-agent-db-update", Version: "0.0.0", PURLType: inventory.PURLType(eco)}}}
 			err = e.Enrich(ctx, nil, inv)
 		}
 		if err == nil {

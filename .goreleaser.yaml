@@ -2,7 +2,7 @@
 # from a tag; nothing is published by this file alone.
 version: 2
 
-project_name: attackscout-cli
+project_name: attackscout-agent
 
 before:
   hooks:
@@ -10,16 +10,16 @@ before:
     - go test ./...
 
 builds:
-  - id: attackscout-cli
+  - id: attackscout-agent
     main: .
-    binary: attackscout-cli
+    binary: attackscout-agent
     env:
       - CGO_ENABLED=0
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
     flags: [-trimpath]
     ldflags:
-      - -s -w -X github.com/attackscout/attackscout-cli/internal/cli.Version={{ .Version }}
+      - -s -w -X github.com/attackscout/attackscout-agent/internal/cli.Version={{ .Version }}
 
 archives:
   - id: default

@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
-	"github.com/attackscout/attackscout-cli/internal/inventory"
-	"github.com/attackscout/attackscout-cli/internal/report"
-	"github.com/attackscout/attackscout-cli/internal/scan"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/report"
+	"github.com/attackscout/attackscout-agent/internal/scan"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 // Version is set at build time with -ldflags "-X ...cli.Version=x.y.z".
@@ -63,12 +63,12 @@ func defaultEnv() env {
 	return e
 }
 
-const usage = `attackscout-cli checks a website from inside its server. Read only, no network by default.
+const usage = `attackscout-agent checks a website from inside its server. Read only, no network by default.
 
 Usage:
-  attackscout-cli scan [flags]       scan the server
-  attackscout-cli db update [flags]  download the OSV databases (network)
-  attackscout-cli version            print the version
+  attackscout-agent scan [flags]       scan the server
+  attackscout-agent db update [flags]  download the OSV databases (network)
+  attackscout-agent version            print the version
 
 Scan flags:
   --root DIR       web root (default: detected)
@@ -108,7 +108,7 @@ func run(args []string, stdout, stderr io.Writer, e env) int {
 		_, _ = fmt.Fprint(stderr, usage)
 		return ExitUsage
 	case "version", "--version", "-v":
-		_, _ = fmt.Fprintf(stdout, "attackscout-cli %s\n", Version)
+		_, _ = fmt.Fprintf(stdout, "attackscout-agent %s\n", Version)
 		return ExitOK
 	case "help", "--help", "-h":
 		_, _ = fmt.Fprint(stdout, usage)

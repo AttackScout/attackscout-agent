@@ -8,7 +8,7 @@
 - **Nothing is sent by default.** No telemetry, no update check, no call home. Two explicit options use the network (`db update`, `--online`), described in [Network: what leaves the machine](#network-what-leaves-the-machine).
 - **One static binary**, written in Go. No agent, no account, no service to install.
 
-It complements [AttackScout](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli), which audits what the Internet sees of a domain. This tool is separate and free; it is not part of the AttackScout service.
+It complements [AttackScout](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent), which audits what the Internet sees of a domain. This tool is separate and free; it is not part of the AttackScout service.
 
 ## Contents
 
@@ -67,7 +67,7 @@ attackscout-agent scan --root /var/www/site --project /srv/app
 The real output below comes from running the tool on the fake WordPress site and the nginx configuration in `testdata/` of this repository, on a Windows machine (hence the "not applicable" line for permissions; on Linux they are checked). It is shortened: the list of findings is cut where marked.
 
 ```text
-AttackScout CLI 0.1.0 - local scan, read only
+AttackScout agent 0.1.0 - local scan, read only
 Network: nothing was sent
 root: wordpress
 nginx: nginx
@@ -100,7 +100,7 @@ Findings
 Summary: 4 critical, 4 high, 5 medium, 10 low, 0 info
 
 This scan sees the inside of the server. To see what the Internet sees, run the free external audit:
-https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli
+https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent
 ```
 
 With `--fail-on high`, that same run exits with code `1`.
@@ -212,7 +212,7 @@ Yes. It runs on Windows and checks IIS `web.config`, nginx and Apache. File perm
 
 ## Check your site from the outside too
 
-This tool sees the inside of your server. It cannot see what a visitor or a scanner sees: the headers your proxy or CDN actually sends, what is reachable from the Internet, or the certificate actually served. For that, run the external audit of your domain at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli).
+This tool sees the inside of your server. It cannot see what a visitor or a scanner sees: the headers your proxy or CDN actually sends, what is reachable from the Internet, or the certificate actually served. For that, run the external audit of your domain at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent).
 
 ## Limits
 

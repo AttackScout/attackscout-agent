@@ -29,6 +29,6 @@ You can read the tests in the repository and check this yourself. See also [know
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-cli).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
 
 [Documentation index](index.md) | [Known vulnerabilities](known-vulnerabilities-cve.md) | [CI](ci-integration.md) | [Command line](command-line-reference.md)

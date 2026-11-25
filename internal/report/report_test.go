@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
-	"github.com/attackscout/attackscout-cli/internal/inventory"
-	"github.com/attackscout/attackscout-cli/internal/scan"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/scan"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 func sample() scan.Report {
@@ -49,7 +49,7 @@ func TestText(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := b.String()
-	for _, want := range []string{"AttackScout CLI 0.1.0", "Network: nothing was sent", "[not applicable", "[not checked", "[pass", "[fail",
+	for _, want := range []string{"AttackScout agent 0.1.0", "Network: nothing was sent", "[not applicable", "[not checked", "[pass", "[fail",
 		"hashicorp/aws", "certainty: high", "1 CVE", "CVEs not checked", "fix: Upgrade hashicorp/aws to 5.40.0 or later",
 		"[CRITICAL] vulnerable-component", "... and 5 more dependencies", "Summary: 1 critical, 0 high, 0 medium, 0 low, 1 info", AuditURL} {
 		if !strings.Contains(out, want) {

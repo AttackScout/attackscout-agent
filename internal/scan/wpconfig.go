@@ -6,7 +6,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
 )
 
 var wpSalts = []string{"AUTH_KEY", "SECURE_AUTH_KEY", "LOGGED_IN_KEY", "NONCE_KEY", "AUTH_SALT", "SECURE_AUTH_SALT", "LOGGED_IN_SALT", "NONCE_SALT"}

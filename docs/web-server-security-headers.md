@@ -57,6 +57,6 @@ The tool reads files. It does not request your site. A header added by a reverse
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-cli).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
 
 [Documentation index](index.md) | [Certificates](ssl-certificate-check.md) | [Exposed files](exposed-files-web-root.md) | [Command line](command-line-reference.md)

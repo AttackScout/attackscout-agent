@@ -1,6 +1,6 @@
 /dist/
-/attackscout-cli
-/attackscout-cli.exe
+/attackscout-agent
+/attackscout-agent.exe
 *.test
 *.out
 coverage.*

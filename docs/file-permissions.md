@@ -29,6 +29,6 @@ On Windows the check is reported `not_applicable`: Unix permission bits do not e
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-cli).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
 
 [Documentation index](index.md) | [Exposed files](exposed-files-web-root.md) | [wp-config.php](wordpress-wp-config-security.md) | [Command line](command-line-reference.md)

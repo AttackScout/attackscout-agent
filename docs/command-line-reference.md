@@ -51,6 +51,6 @@ See the guides: [end of life](end-of-life-software.md), [CVE](known-vulnerabilit
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-cli).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
 
 [Documentation index](index.md) | [CI](ci-integration.md) | [Network](offline-and-network.md)

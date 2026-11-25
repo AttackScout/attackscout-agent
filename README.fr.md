@@ -8,7 +8,7 @@
 - **Rien n'est envoyé par défaut.** Ni télémétrie, ni vérification de mise à jour. Deux options explicites utilisent le réseau (`db update`, `--online`), décrites dans [Réseau : ce qui sort de la machine](#réseau--ce-qui-sort-de-la-machine).
 - **Un seul binaire statique**, écrit en Go. Pas d'agent, pas de compte, pas de service à installer.
 
-Il complète [AttackScout](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli), qui audite ce qu'Internet voit d'un domaine. Cet outil est à part et gratuit ; il ne fait pas partie du service AttackScout.
+Il complète [AttackScout](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent), qui audite ce qu'Internet voit d'un domaine. Cet outil est à part et gratuit ; il ne fait pas partie du service AttackScout.
 
 ## Sommaire
 
@@ -66,7 +66,7 @@ attackscout-agent scan --root /var/www/site --project /srv/app
 La sortie ci-dessous est réelle : elle vient de l'outil lancé sur le faux site WordPress et la configuration nginx du dossier `testdata/` de ce dépôt, sur une machine Windows (d'où la ligne « non applicable » pour les droits ; sous Linux ils sont contrôlés). Elle est abrégée : la liste des constats est coupée là où c'est indiqué.
 
 ```text
-AttackScout CLI 0.1.0 - analyse locale, en lecture seule
+AttackScout agent 0.1.0 - analyse locale, en lecture seule
 Réseau : rien n'a été envoyé
 root: wordpress
 nginx: nginx
@@ -99,7 +99,7 @@ Constats
 Bilan : 4 critique, 4 élevé, 5 moyen, 10 faible, 0 info
 
 Cette analyse voit l'intérieur du serveur. Pour voir ce qu'Internet en voit, lancez l'audit externe gratuit :
-https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli
+https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent
 ```
 
 Avec `--fail-on high`, la même exécution se termine avec le code `1`.
@@ -211,7 +211,7 @@ Oui. Il s'exécute sous Windows et contrôle le `web.config` d'IIS, nginx et Apa
 
 ## Vérifiez aussi votre site depuis l'extérieur
 
-Cet outil voit l'intérieur de votre serveur. Il ne voit pas ce que voit un visiteur ou un scanner : les en-têtes réellement envoyés par votre proxy ou votre CDN, ce qui est joignable depuis Internet, ou le certificat réellement servi. Pour cela, lancez l'audit externe de votre domaine sur [attackscout.com/fr](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli).
+Cet outil voit l'intérieur de votre serveur. Il ne voit pas ce que voit un visiteur ou un scanner : les en-têtes réellement envoyés par votre proxy ou votre CDN, ce qui est joignable depuis Internet, ou le certificat réellement servi. Pour cela, lancez l'audit externe de votre domaine sur [attackscout.com/fr](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent).
 
 ## Limites
 

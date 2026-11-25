@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
 )
 
 // maxPermFindings caps the findings per permission rule; the rest is counted.

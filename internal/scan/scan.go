@@ -11,10 +11,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/eol"
-	"github.com/attackscout/attackscout-cli/internal/i18n"
-	"github.com/attackscout/attackscout-cli/internal/inventory"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/eol"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 // Severity of a finding.

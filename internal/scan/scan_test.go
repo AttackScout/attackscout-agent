@@ -18,10 +18,10 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/eol"
-	"github.com/attackscout/attackscout-cli/internal/i18n"
-	"github.com/attackscout/attackscout-cli/internal/inventory"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/eol"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 const td = "../../testdata"
@@ -439,7 +439,7 @@ func TestCheckVulns(t *testing.T) {
 	ctx := context.Background()
 	// no matcher
 	fs0, items0, st, note, _, mode0 := CheckVulns(ctx, cs, nil)
-	if st != NotChecked || len(fs0) != 0 || mode0 != "none" || !strings.Contains(note.Render("fr"), "lancez « attackscout-cli db update »") || items0[0].CVE != "not_checked" {
+	if st != NotChecked || len(fs0) != 0 || mode0 != "none" || !strings.Contains(note.Render("fr"), "lancez « attackscout-agent db update »") || items0[0].CVE != "not_checked" {
 		t.Fatalf("no matcher: %v %s", st, note.Render("en"))
 	}
 	// partial, with findings

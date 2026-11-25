@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/report"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/report"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 const td = "../../testdata"
@@ -105,7 +105,7 @@ func TestCommands(t *testing.T) {
 	if c, _, errs := runT(t, e, "nope"); c != ExitUsage || !strings.Contains(errs, "unknown command") {
 		t.Error("unknown command")
 	}
-	if c, out, _ := runT(t, e, "version"); c != ExitOK || out != "attackscout-cli "+Version+"\n" {
+	if c, out, _ := runT(t, e, "version"); c != ExitOK || out != "attackscout-agent "+Version+"\n" {
 		t.Error(out)
 	}
 	if c, out, _ := runT(t, e, "help"); c != ExitOK || !strings.Contains(out, report.AuditURL) {

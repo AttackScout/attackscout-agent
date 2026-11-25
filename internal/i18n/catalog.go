@@ -31,12 +31,12 @@ var catalog = map[string][2]string{
 	"cve.fix":   {"Upgrade %s to %s or later", "Mettez %s à jour en version %s ou plus récente"},
 	"cve.nofix": {"No fixed version published for %s: replace or isolate it", "Aucune version corrigée publiée pour %s : remplacez-le ou isolez-le"},
 	"note.cve.run-db-update": {
-		"CVEs not checked: run \"attackscout-cli db update\" (or use --online)",
-		"CVE non vérifiées : lancez « attackscout-cli db update » (ou utilisez --online)",
+		"CVEs not checked: run \"attackscout-agent db update\" (or use --online)",
+		"CVE non vérifiées : lancez « attackscout-agent db update » (ou utilisez --online)",
 	},
 	"note.cve.partial": {
-		"CVEs not checked for: %s (run \"attackscout-cli db update\")",
-		"CVE non vérifiées pour : %s (lancez « attackscout-cli db update »)",
+		"CVEs not checked for: %s (run \"attackscout-agent db update\")",
+		"CVE non vérifiées pour : %s (lancez « attackscout-agent db update »)",
 	},
 	"note.cve.no-ecosystem": {
 		"CVEs not checked for %d components that OSV does not track (WordPress, Joomla extensions, ...)",
@@ -147,7 +147,7 @@ var catalog = map[string][2]string{
 	"fix.iis-browse":              {"Set <directoryBrowse enabled=\"false\"/>", "Mettez <directoryBrowse enabled=\"false\"/>"},
 
 	// report
-	"report.title":          {"AttackScout CLI %s - local scan, read only", "AttackScout CLI %s - analyse locale, en lecture seule"},
+	"report.title":          {"AttackScout agent %s - local scan, read only", "AttackScout agent %s - analyse locale, en lecture seule"},
 	"report.network.off":    {"Network: nothing was sent", "Réseau : rien n'a été envoyé"},
 	"report.network.on":     {"Network: --online, package names and versions sent to api.osv.dev", "Réseau : --online, noms et versions des paquets envoyés à api.osv.dev"},
 	"report.checks":         {"Checks", "Contrôles"},

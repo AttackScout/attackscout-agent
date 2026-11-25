@@ -8,7 +8,7 @@ import (
 	"encoding/pem"
 	"time"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
 )
 
 // expiringDays: a certificate expiring sooner than this is reported.

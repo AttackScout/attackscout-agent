@@ -301,7 +301,7 @@ func TestHelpers(t *testing.T) {
 	if p := c.Pkg(); p.PURLType != "npm" || p.Name != "x" || c.Certainty() != "medium" {
 		t.Errorf("%+v", p)
 	}
-	if _, err := LocalExec("attackscout-cli-no-such-binary"); err == nil {
+	if _, err := LocalExec("attackscout-agent-no-such-binary"); err == nil {
 		t.Error("missing binary")
 	}
 	big := filepath.Join(t.TempDir(), "big")

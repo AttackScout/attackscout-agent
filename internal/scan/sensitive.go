@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
 )
 
 const (

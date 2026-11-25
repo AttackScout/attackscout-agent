@@ -7,14 +7,14 @@ import (
 	"io"
 	"strings"
 
-	"github.com/attackscout/attackscout-cli/internal/i18n"
-	"github.com/attackscout/attackscout-cli/internal/inventory"
-	"github.com/attackscout/attackscout-cli/internal/scan"
-	"github.com/attackscout/attackscout-cli/internal/vulns"
+	"github.com/attackscout/attackscout-agent/internal/i18n"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/scan"
+	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
 // AuditURL is the free external audit, shown at the end of every report.
-const AuditURL = "https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-cli"
+const AuditURL = "https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent"
 
 // maxDeps is the number of plain dependencies listed in the text report.
 const maxDeps = 15
@@ -162,7 +162,7 @@ type jsonReport struct {
 
 // JSON writes the machine report.
 func JSON(w io.Writer, r scan.Report, version, lang string) error {
-	out := jsonReport{Tool: "attackscout-cli", Version: version, Lang: lang, Generated: r.Generated.Format("2006-01-02T15:04:05Z"),
+	out := jsonReport{Tool: "attackscout-agent", Version: version, Lang: lang, Generated: r.Generated.Format("2006-01-02T15:04:05Z"),
 		NetworkUsed: r.CVEMode == "online", CVEMode: r.CVEMode, EOLDataDate: r.EOLDate,
 		Root: r.Root, Nginx: r.Nginx, Apache: r.Apache, Summary: Counts(r.Findings), Unchecked: r.Unchecked,
 		ReadErrors: r.ReadErrors, ExternalAudit: AuditURL,

@@ -20,7 +20,7 @@ import (
 	osvpb "github.com/ossf/osv-schema/bindings/go/osvschema"
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/attackscout/attackscout-cli/internal/inventory"
+	"github.com/attackscout/attackscout-agent/internal/inventory"
 )
 
 var ecoPrefix = map[string]string{"npm": "npm", "go": "Go", "packagist": "Packagist"}
@@ -395,7 +395,7 @@ func TestConvert(t *testing.T) {
 }
 
 func TestDefaults(t *testing.T) {
-	if !strings.HasSuffix(DefaultDir(), "attackscout-cli") {
+	if !strings.HasSuffix(DefaultDir(), "attackscout-agent") {
 		t.Error(DefaultDir())
 	}
 	if NewHTTPClient().Timeout == 0 {
