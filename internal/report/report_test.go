@@ -45,7 +45,7 @@ func sample() scan.Report {
 
 func TestText(t *testing.T) {
 	var b bytes.Buffer
-	if err := Text(&b, sample(), "0.1.0", "en"); err != nil {
+	if err := Text(&b, sample(), "0.1.0", "en", true); err != nil {
 		t.Fatal(err)
 	}
 	out := b.String()
@@ -63,7 +63,7 @@ func TestText(t *testing.T) {
 	r := sample()
 	r.CVEMode = "online"
 	r.Findings = nil
-	if err := Text(&b, r, "0.1.0", "fr"); err != nil {
+	if err := Text(&b, r, "0.1.0", "fr", true); err != nil {
 		t.Fatal(err)
 	}
 	out = b.String()
@@ -83,7 +83,7 @@ func TestJSON(t *testing.T) {
 	if err := json.Unmarshal(b.Bytes(), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got["external_audit"] != AuditURL || got["network_used"] != false || got["lang"] != "fr" || got["eol_data_date"] != "2026-11-25" {
+	if _, ok := got["external_audit"]; ok || got["network_used"] != false || got["lang"] != "fr" || got["eol_data_date"] != "2026-11-25" {
 		t.Errorf("%v", got)
 	}
 	checks := got["checks"].([]any)
@@ -113,7 +113,7 @@ type failWriter struct{}
 func (failWriter) Write([]byte) (int, error) { return 0, errors.New("disk full") }
 
 func TestWriteError(t *testing.T) {
-	if Text(failWriter{}, sample(), "x", "en") == nil {
+	if Text(failWriter{}, sample(), "x", "en", true) == nil {
 		t.Error("write error lost")
 	}
 }

@@ -70,12 +70,16 @@ func CheckPermsFS(fsys fs.FS, root string) []Finding {
 			add(Finding{ID: "perm-secret-world-readable", Severity: Medium, Path: full,
 				Title: i18n.M("perm.secret-wr", p, fmt.Sprintf("%04o", perm)), Fix: i18n.M("fix.perm-secret-world-readable")})
 		}
+		if !d.IsDir() && strings.EqualFold(path.Base(p), "wp-config.php") && perm&0o022 != 0 && perm&0o002 == 0 {
+			add(Finding{ID: "perm-wpconfig-group-writable", Severity: Low, Path: full,
+				Title: i18n.M("perm.wpconfig-gw", p, fmt.Sprintf("%04o", perm)), Fix: i18n.M("fix.perm-wpconfig")})
+		}
 		if d.IsDir() && p != "." && (skipDirs[d.Name()] || strings.Count(p, "/") >= maxDepth) {
 			return fs.SkipDir
 		}
 		return nil
 	})
-	for _, id := range []string{"perm-dir-777", "perm-dir-world-writable", "perm-file-world-writable", "perm-secret-world-readable"} {
+	for _, id := range []string{"perm-dir-777", "perm-dir-world-writable", "perm-file-world-writable", "perm-secret-world-readable", "perm-wpconfig-group-writable"} {
 		if n := extra[id]; n > 0 {
 			out = append(out, Finding{ID: id, Severity: Info, Title: i18n.M("perm.more", n, id)})
 		}

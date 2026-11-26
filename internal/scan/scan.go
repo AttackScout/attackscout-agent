@@ -102,6 +102,8 @@ type Report struct {
 	Generated  time.Time `json:"generated"`
 	Unchecked  []string  `json:"cve_unchecked_ecosystems,omitempty"`
 	ReadErrors []string  `json:"read_errors,omitempty"`
+	KEVLoaded  bool      `json:"kev_loaded"`
+	Exploited  int       `json:"known_exploited"`
 }
 
 // Options selects what to scan. Empty fields are skipped.
@@ -120,6 +122,10 @@ type Options struct {
 	Matcher vulns.Matcher
 	// GOOS overrides runtime.GOOS (tests).
 	GOOS string
+	// KEV is the CISA list of exploited vulnerabilities; nil when absent.
+	KEV vulns.KEV
+	// SysRoot is where the system package databases are read ("/").
+	SysRoot string
 }
 
 // Run executes every check.
@@ -135,7 +141,7 @@ func Run(ctx context.Context, o Options) Report {
 	}
 	rep := Report{EOLDate: o.EOL.Updated, Root: o.Root, Nginx: o.Nginx, Apache: o.Apache, Generated: o.Now.UTC(), CVEMode: "none"}
 	web := LoadWebConfig(o.Nginx, o.Apache, o.Root)
-	inv := inventory.Collect(inventory.Options{Root: o.Root, Projects: o.Projects, Exec: o.Exec, PHPHintDirs: o.PHPHintDirs, ConfigText: web.Text()})
+	inv := inventory.Collect(inventory.Options{Root: o.Root, Projects: o.Projects, Exec: o.Exec, PHPHintDirs: o.PHPHintDirs, ConfigText: web.Text(), SysRoot: o.SysRoot})
 	rep.ReadErrors = inv.Errors
 
 	add := func(id string, fs []Finding, empty Status, note i18n.Msg) {
@@ -163,15 +169,18 @@ func Run(ctx context.Context, o Options) Report {
 	// 2. CVE
 	vfs, items, st, note, unchecked, mode := CheckVulns(ctx, inv.Components, o.Matcher)
 	rep.Items, rep.Unchecked, rep.CVEMode = items, unchecked, mode
+	rep.KEVLoaded = o.KEV != nil
+	rep.Exploited = ApplyKEV(vfs, items, o.KEV)
 	add("vulnerabilities", vfs, st, note)
 
 	// 3. Sensitive files, permissions, wp-config
 	if o.Root == "" {
-		for _, id := range []string{"sensitive-files", "permissions", "wp-config"} {
+		for _, id := range []string{"sensitive-files", "phpinfo", "permissions", "wp-config"} {
 			add(id, nil, NotChecked, i18n.M("note.no-root"))
 		}
 	} else {
 		add("sensitive-files", CheckSensitive(o.Root), Pass, i18n.Msg{})
+		add("phpinfo", CheckPHPInfo(o.Root), Pass, i18n.Msg{})
 		if o.GOOS == "windows" {
 			add("permissions", nil, NotApplicable, i18n.M("note.perms.windows"))
 		} else {

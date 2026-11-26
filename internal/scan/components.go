@@ -174,3 +174,33 @@ func oldest(m map[string]time.Time) string {
 	}
 	return t.UTC().Format("2006-01-02")
 }
+
+// ApplyKEV marks the vulnerabilities listed by CISA as exploited in the
+// wild: the finding becomes critical, whatever its CVSS score.
+func ApplyKEV(fs []Finding, items []Item, kev vulns.KEV) int {
+	if kev == nil {
+		return 0
+	}
+	mark := func(v *vulns.Vuln) bool {
+		e, ok := kev.Lookup(*v)
+		if ok {
+			v.KEV, v.KEVDateAdded, v.Ransomware = true, e.DateAdded, strings.EqualFold(e.Ransomware, "Known")
+		}
+		return ok
+	}
+	n := 0
+	for i := range fs {
+		if fs[i].Vuln == nil || !mark(fs[i].Vuln) {
+			continue
+		}
+		n++
+		fs[i].Severity = Critical
+		fs[i].Title = i18n.M("cve.kev", fs[i].Title, fs[i].Vuln.KEVDateAdded)
+	}
+	for i := range items {
+		for j := range items[i].Vulns {
+			mark(&items[i].Vulns[j])
+		}
+	}
+	return n
+}

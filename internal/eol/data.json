@@ -525,6 +525,104 @@
      "ended": true
     }
    ]
+  },
+  "nginx": {
+   "label": "nginx",
+   "link": "https://nginx.org/en/download.html",
+   "cycles": [
+    {
+     "cycle": "1.29"
+    },
+    {
+     "cycle": "1.28"
+    },
+    {
+     "cycle": "1.27",
+     "eol": "2025-04-23"
+    },
+    {
+     "cycle": "1.26",
+     "eol": "2025-04-23"
+    },
+    {
+     "cycle": "1.25",
+     "eol": "2024-04-23"
+    },
+    {
+     "cycle": "1.24",
+     "eol": "2024-04-23"
+    },
+    {
+     "cycle": "1.22",
+     "eol": "2023-04-11"
+    },
+    {
+     "cycle": "1.20",
+     "eol": "2022-05-24"
+    },
+    {
+     "cycle": "1.18",
+     "eol": "2021-04-20"
+    },
+    {
+     "cycle": "1.16",
+     "eol": "2020-04-21"
+    },
+    {
+     "cycle": "1.14",
+     "eol": "2019-04-23"
+    }
+   ]
+  },
+  "apache": {
+   "label": "Apache httpd",
+   "link": "https://httpd.apache.org/download.cgi",
+   "cycles": [
+    {
+     "cycle": "2.4"
+    },
+    {
+     "cycle": "2.2",
+     "eol": "2017-07-11"
+    },
+    {
+     "cycle": "2.0",
+     "eol": "2013-07-10"
+    },
+    {
+     "cycle": "1.3",
+     "eol": "2010-02-03"
+    }
+   ]
+  },
+  "iis": {
+   "label": "IIS",
+   "link": "https://learn.microsoft.com/lifecycle/products/internet-information-services-iis",
+   "cycles": [
+    {
+     "cycle": "10.0"
+    },
+    {
+     "cycle": "8.5",
+     "eol": "2023-10-10"
+    },
+    {
+     "cycle": "8.0",
+     "eol": "2023-10-10"
+    },
+    {
+     "cycle": "7.5",
+     "eol": "2020-01-14"
+    },
+    {
+     "cycle": "7.0",
+     "eol": "2020-01-14"
+    },
+    {
+     "cycle": "6.0",
+     "eol": "2015-07-14"
+    }
+   ]
   }
  }
 }

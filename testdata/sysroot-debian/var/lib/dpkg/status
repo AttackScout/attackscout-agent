@@ -1,0 +1,16 @@
+Package: openssl
+Status: install ok installed
+Priority: optional
+Section: utils
+Installed-Size: 2000
+Maintainer: Debian OpenSSL Team
+Architecture: amd64
+Version: 3.0.11-1~deb12u1
+Description: Secure Sockets Layer toolkit
+
+Package: removed-pkg
+Status: deinstall ok config-files
+Architecture: amd64
+Version: 1.0-1
+Description: removed
+

@@ -34,12 +34,15 @@ const (
 	EcoPyPI      = "PyPI"
 	EcoNuGet     = "NuGet"
 	EcoGo        = "Go"
+	EcoRubyGems  = "RubyGems"
+	EcoMaven     = "Maven"
 )
 
-// Ecosystems lists the ecosystems that "db update" downloads.
-var Ecosystems = []string{EcoNPM, EcoPackagist, EcoPyPI, EcoNuGet, EcoGo}
+// Ecosystems lists the language ecosystems that "db update" downloads
+// by default; the ecosystem of the operating system is added when known.
+var Ecosystems = []string{EcoNPM, EcoPackagist, EcoPyPI, EcoNuGet, EcoGo, EcoRubyGems, EcoMaven}
 
-var purlTypes = map[string]string{EcoNPM: "npm", EcoPackagist: "composer", EcoPyPI: "pypi", EcoNuGet: "nuget", EcoGo: "golang"}
+var purlTypes = map[string]string{EcoNPM: "npm", EcoPackagist: "composer", EcoPyPI: "pypi", EcoNuGet: "nuget", EcoGo: "golang", EcoRubyGems: "gem", EcoMaven: "maven"}
 
 // EcosystemOfPURL maps a purl type to its OSV ecosystem ("" if not tracked).
 func EcosystemOfPURL(t string) string {
@@ -109,6 +112,9 @@ type Options struct {
 	PHPHintDirs []string
 	// ConfigText is the web server configuration, for PHP hints.
 	ConfigText string
+	// SysRoot is where the package databases of the system are read ("/"),
+	// empty to skip them.
+	SysRoot string
 }
 
 // Result is the inventory and the errors met while reading lockfiles.
@@ -124,6 +130,12 @@ func Collect(o Options) Result {
 		o.Exec = func(string, ...string) (string, error) { return "", os.ErrNotExist }
 	}
 	r.Components = append(r.Components, Runtimes(o)...)
+	r.Components = append(r.Components, WebServers(o.Exec)...)
+	sys, err := SystemPackages(o.SysRoot)
+	if err != nil {
+		r.Errors = append(r.Errors, err.Error())
+	}
+	r.Components = append(r.Components, sys...)
 	dirs := dedupe(append([]string{o.Root}, o.Projects...))
 	for _, d := range dirs {
 		if d == o.Root {
@@ -191,7 +203,7 @@ func uniq(cs []Component) []Component {
 	return out
 }
 
-var kindOrder = []string{KindRuntime, KindCMS, KindCMSPlugin, KindCMSModule, KindCMSExtension, KindCMSTheme, KindFramework, KindTerraform, KindTerraformProvider, KindDependency}
+var kindOrder = []string{KindRuntime, KindWebServer, KindCMS, KindCMSPlugin, KindCMSModule, KindCMSExtension, KindCMSTheme, KindFramework, KindTerraform, KindTerraformProvider, KindDependency, KindSystemPackage}
 
 func kindRank(k string) int {
 	for i, o := range kindOrder {

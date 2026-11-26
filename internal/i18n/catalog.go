@@ -27,9 +27,14 @@ var catalog = map[string][2]string{
 	},
 
 	// CVE
-	"cve.title": {"%s %s: %s (CVSS %s) %s", "%s %s : %s (CVSS %s) %s"},
-	"cve.fix":   {"Upgrade %s to %s or later", "Mettez %s à jour en version %s ou plus récente"},
-	"cve.nofix": {"No fixed version published for %s: replace or isolate it", "Aucune version corrigée publiée pour %s : remplacez-le ou isolez-le"},
+	"cve.title":         {"%s %s: %s (CVSS %s) %s", "%s %s : %s (CVSS %s) %s"},
+	"cve.kev":           {"%s [EXPLOITED IN THE WILD: CISA KEV since %s]", "%s [EXPLOITÉE ACTIVEMENT : liste KEV de la CISA depuis le %s]"},
+	"phpinfo.found":     {"%s calls phpinfo(): it shows the server configuration to anyone", "%s appelle phpinfo() : la configuration du serveur est visible de tous"},
+	"perm.wpconfig-gw":  {"wp-config.php %s is writable by its group (%s)", "wp-config.php %s est modifiable par son groupe (%s)"},
+	"fix.perm-wpconfig": {"chmod 640 (or 600) wp-config.php", "chmod 640 (ou 600) sur wp-config.php"},
+	"check.phpinfo":     {"phpinfo pages", "Pages phpinfo"},
+	"cve.fix":           {"Upgrade %s to %s or later", "Mettez %s à jour en version %s ou plus récente"},
+	"cve.nofix":         {"No fixed version published for %s: replace or isolate it", "Aucune version corrigée publiée pour %s : remplacez-le ou isolez-le"},
 	"note.cve.run-db-update": {
 		"CVEs not checked: run \"attackscout-agent db update\" (or use --online)",
 		"CVE non vérifiées : lancez « attackscout-agent db update » (ou utilisez --online)",
@@ -157,6 +162,9 @@ var catalog = map[string][2]string{
 	"report.kv":             {"%s: %s", "%s : %s"},
 	"report.fix":            {"fix", "correctif"},
 	"report.certainty":      {"certainty", "certitude"},
+	"report.advisory":       {"advisory", "avis"},
+	"report.kev.count":      {"%d vulnerabilities are exploited in the wild (CISA KEV): fix them first.", "%d vulnérabilités sont exploitées activement (liste KEV de la CISA) : corrigez-les en premier."},
+	"report.kev.missing":    {"CISA KEV list not downloaded: run \"attackscout-agent db update\" to flag exploited vulnerabilities.", "Liste KEV de la CISA absente : lancez « attackscout-agent db update » pour signaler les failles exploitées."},
 	"report.summary":        {"Summary: %d critical, %d high, %d medium, %d low, %d info", "Bilan : %d critique, %d élevé, %d moyen, %d faible, %d info"},
 	"report.more-deps":      {"... and %d more dependencies (see --json)", "... et %d autres dépendances (voir --json)"},
 	"report.cve.ok":         {"no known CVE", "aucune CVE connue"},

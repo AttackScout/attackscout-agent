@@ -13,8 +13,9 @@ import (
 	"github.com/attackscout/attackscout-agent/internal/vulns"
 )
 
-// AuditURL is the free external audit, shown at the end of every report.
-const AuditURL = "https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent"
+// AuditURL is the free external audit, shown at the end of the text report
+// only (never in JSON or SARIF); --no-audit-link hides it.
+const AuditURL = "https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=cli&utm_campaign=report"
 
 // maxDeps is the number of plain dependencies listed in the text report.
 const maxDeps = 15
@@ -38,8 +39,9 @@ func cveLabel(it scan.Item, lang string) string {
 	return i18n.M("report.cve.count", len(it.Vulns)).Render(lang)
 }
 
-// Text writes the human report.
-func Text(w io.Writer, r scan.Report, version, lang string) error {
+// Text writes the human report. auditLink adds the invitation to the free
+// external audit at the end.
+func Text(w io.Writer, r scan.Report, version, lang string, auditLink bool) error {
 	t := func(key string, args ...any) string { return i18n.M(key, args...).Render(lang) }
 	var b strings.Builder
 	fmt.Fprintln(&b, t("report.title", version))
@@ -68,7 +70,7 @@ func Text(w io.Writer, r scan.Report, version, lang string) error {
 		hidden := 0
 		shown := 0
 		for _, it := range r.Items {
-			if it.Kind == inventory.KindDependency && len(it.Vulns) == 0 {
+			if (it.Kind == inventory.KindDependency || it.Kind == inventory.KindSystemPackage) && len(it.Vulns) == 0 {
 				if shown >= maxDeps {
 					hidden++
 					continue
@@ -106,10 +108,20 @@ func Text(w io.Writer, r scan.Report, version, lang string) error {
 		if !f.Fix.IsZero() {
 			fmt.Fprintf(&b, "      %s\n", t("report.kv", t("report.fix"), f.Fix.Render(lang)))
 		}
+		if f.Vuln != nil && f.Vuln.URL != "" {
+			fmt.Fprintf(&b, "      %s\n", t("report.kv", t("report.advisory"), f.Vuln.URL))
+		}
 	}
 	c := Counts(r.Findings)
-	fmt.Fprintf(&b, "\n%s\n\n%s\n%s\n", t("report.summary", c["critical"], c["high"], c["medium"], c["low"], c["info"]),
-		t("report.external"), AuditURL)
+	fmt.Fprintf(&b, "\n%s\n", t("report.summary", c["critical"], c["high"], c["medium"], c["low"], c["info"]))
+	if r.Exploited > 0 {
+		fmt.Fprintf(&b, "%s\n", t("report.kev.count", r.Exploited))
+	} else if !r.KEVLoaded {
+		fmt.Fprintf(&b, "%s\n", t("report.kev.missing"))
+	}
+	if auditLink {
+		fmt.Fprintf(&b, "\n%s\n%s\n", t("report.external"), AuditURL)
+	}
 	_, err := io.WriteString(w, b.String())
 	return err
 }
@@ -141,23 +153,24 @@ type jsonFinding struct {
 }
 
 type jsonReport struct {
-	Tool          string          `json:"tool"`
-	Version       string          `json:"version"`
-	Lang          string          `json:"lang"`
-	Generated     string          `json:"generated"`
-	NetworkUsed   bool            `json:"network_used"`
-	CVEMode       string          `json:"cve_mode"`
-	EOLDataDate   string          `json:"eol_data_date"`
-	Root          string          `json:"root,omitempty"`
-	Nginx         string          `json:"nginx,omitempty"`
-	Apache        string          `json:"apache,omitempty"`
-	Checks        []jsonCheck     `json:"checks"`
-	Components    []jsonComponent `json:"components"`
-	Findings      []jsonFinding   `json:"findings"`
-	Summary       map[string]int  `json:"summary"`
-	Unchecked     []string        `json:"cve_unchecked_ecosystems,omitempty"`
-	ReadErrors    []string        `json:"read_errors,omitempty"`
-	ExternalAudit string          `json:"external_audit"`
+	Tool        string          `json:"tool"`
+	Version     string          `json:"version"`
+	Lang        string          `json:"lang"`
+	Generated   string          `json:"generated"`
+	NetworkUsed bool            `json:"network_used"`
+	CVEMode     string          `json:"cve_mode"`
+	EOLDataDate string          `json:"eol_data_date"`
+	Root        string          `json:"root,omitempty"`
+	Nginx       string          `json:"nginx,omitempty"`
+	Apache      string          `json:"apache,omitempty"`
+	Checks      []jsonCheck     `json:"checks"`
+	Components  []jsonComponent `json:"components"`
+	Findings    []jsonFinding   `json:"findings"`
+	Summary     map[string]int  `json:"summary"`
+	Unchecked   []string        `json:"cve_unchecked_ecosystems,omitempty"`
+	ReadErrors  []string        `json:"read_errors,omitempty"`
+	KEVLoaded   bool            `json:"kev_loaded"`
+	Exploited   int             `json:"known_exploited"`
 }
 
 // JSON writes the machine report.
@@ -165,7 +178,7 @@ func JSON(w io.Writer, r scan.Report, version, lang string) error {
 	out := jsonReport{Tool: "attackscout-agent", Version: version, Lang: lang, Generated: r.Generated.Format("2006-01-02T15:04:05Z"),
 		NetworkUsed: r.CVEMode == "online", CVEMode: r.CVEMode, EOLDataDate: r.EOLDate,
 		Root: r.Root, Nginx: r.Nginx, Apache: r.Apache, Summary: Counts(r.Findings), Unchecked: r.Unchecked,
-		ReadErrors: r.ReadErrors, ExternalAudit: AuditURL,
+		ReadErrors: r.ReadErrors, KEVLoaded: r.KEVLoaded, Exploited: r.Exploited,
 		Checks: []jsonCheck{}, Components: []jsonComponent{}, Findings: []jsonFinding{}}
 	for _, c := range r.Checks {
 		out.Checks = append(out.Checks, jsonCheck{ID: c.ID, Name: i18n.M("check." + c.ID).Render(lang), Status: c.Status, Note: c.Note.Render(lang)})

@@ -1,0 +1,3 @@
+<?php
+// diagnostics
+phpinfo();

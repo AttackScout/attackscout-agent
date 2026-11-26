@@ -16,7 +16,7 @@ import (
 //
 //  1. Only internal/vulns may import a networking package.
 //  2. The functions of internal/vulns that build a network client
-//     (Online, Update, NewHTTPClient) are used only by two functions of
+//     (Online, Update, UpdateFeeds, NewHTTPClient) are used only by two functions of
 //     internal/cli: onlineMatcher (--online) and runDBUpdate (db update).
 //  3. No telemetry, no update check: no other file mentions an http(s) host
 //     except documentation links in comments and the report link.
@@ -74,7 +74,7 @@ func TestOnlyVulnsImportsNetwork(t *testing.T) {
 
 func TestNetworkPathsAreExplicit(t *testing.T) {
 	allowed := map[string]bool{"onlineMatcher": true, "runDBUpdate": true}
-	networked := map[string]bool{"Online": true, "Update": true, "NewHTTPClient": true}
+	networked := map[string]bool{"Online": true, "Update": true, "UpdateFeeds": true, "NewHTTPClient": true}
 	uses := 0
 	for p, f := range sources(t) {
 		alias := ""
@@ -110,15 +110,19 @@ func TestNetworkPathsAreExplicit(t *testing.T) {
 			})
 		}
 	}
-	if uses != 4 {
-		t.Errorf("expected 4 uses of the network functions (Online, NewHTTPClient twice, Update), got %d", uses)
+	if uses != 6 {
+		t.Errorf("expected 6 uses of the network functions (Online, NewHTTPClient three times, Update, UpdateFeeds), got %d", uses)
 	}
 }
 
 func TestNoHostsInCode(t *testing.T) {
 	allowedHosts := []string{
-		"https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent",
+		"https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=cli&utm_campaign=report",
+		"https://github.com/AttackScout/attackscout-agent",
+		"https://json.schemastore.org/sarif-2.1.0.json", // SARIF schema identifier, never fetched
 		"https://osv-vulnerabilities.storage.googleapis.com",
+		"https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+		"https://endoflife.date/api/v1/products",
 	}
 	for p, f := range sources(t) {
 		ast.Inspect(f, func(n ast.Node) bool {

@@ -8,9 +8,15 @@
 package vulns
 
 import (
+	"archive/zip"
 	"context"
+	"encoding/base64"
+	"encoding/binary"
 	"errors"
+	"fmt"
+	"hash/crc32"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"sort"
@@ -49,7 +55,15 @@ type Vuln struct {
 	Vector   string   `json:"cvss_vector,omitempty"`
 	Severity string   `json:"severity"` // low, medium, high, critical
 	Fixed    string   `json:"fixed,omitempty"`
+	URL      string   `json:"url"`
+	// KEV: listed by CISA as exploited in the wild.
+	KEV          bool   `json:"known_exploited"`
+	KEVDateAdded string `json:"kev_date_added,omitempty"`
+	Ransomware   bool   `json:"known_ransomware_use,omitempty"`
 }
+
+// AdvisoryURL is the public page of a vulnerability on osv.dev.
+func AdvisoryURL(id string) string { return fmt.Sprintf("https://osv.dev/vulnerability/%s", id) }
 
 // CVE returns the first CVE identifier, or the OSV identifier.
 func (v Vuln) CVE() string {
@@ -233,29 +247,68 @@ func run(ctx context.Context, e enricher.Enricher, comps []inventory.Component, 
 	}
 }
 
-// Update downloads the OSV archive of each ecosystem into dir, through the
-// osv-scalibr download mechanism. It is called by "db update" only.
+// Update downloads the OSV archive of each ecosystem into dir. It is
+// called by "db update" only. The archive is checked before it replaces the
+// previous one.
 func Update(ctx context.Context, dir, remote string, c *http.Client, ecosystems []string) map[string]error {
 	out := map[string]error{}
 	for _, eco := range ecosystems {
-		e, err := osvlocal.New(localConfig(dir, remote, true, c))
-		if err == nil {
-			inv := &scalibrinv.Inventory{Packages: []*extractor.Package{{Name: "attackscout-agent-db-update", Version: "0.0.0", PURLType: inventory.PURLType(eco)}}}
-			err = e.Enrich(ctx, nil, inv)
+		path := ArchivePath(dir, eco)
+		tmp := path + ".new"
+		u := strings.TrimSuffix(remote, "/") + "/" + url.PathEscape(eco) + "/all.zip"
+		if upToDate(ctx, c, u, path) {
+			out[eco] = nil
+			continue
 		}
+		err := download(ctx, c, u, tmp)
 		if err == nil {
-			if _, serr := os.Stat(ArchivePath(dir, eco)); serr != nil {
-				err = serr
+			var z *zip.ReadCloser
+			if z, err = zip.OpenReader(tmp); err == nil {
+				_ = z.Close()
+				err = os.Rename(tmp, path)
 			}
+		}
+		if err != nil {
+			_ = os.Remove(tmp)
 		}
 		out[eco] = err
 	}
 	return out
 }
 
+// upToDate compares the CRC32C of the local archive with the X-Goog-Hash
+// header of the remote one, to skip a download that would change nothing.
+func upToDate(ctx context.Context, c *http.Client, u, path string) bool {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return false
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, u, nil)
+	if err != nil {
+		return false
+	}
+	req.Header.Set("User-Agent", userAgent)
+	resp, err := c.Do(req)
+	if err != nil {
+		return false
+	}
+	_ = resp.Body.Close()
+	sum := make([]byte, 4)
+	binary.BigEndian.PutUint32(sum, crc32.Checksum(data, crc32.MakeTable(crc32.Castagnoli)))
+	want := "crc32c=" + base64.StdEncoding.EncodeToString(sum)
+	for _, h := range resp.Header.Values("X-Goog-Hash") {
+		for _, part := range strings.Split(h, ",") {
+			if strings.TrimSpace(part) == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // Convert turns an OSV record into a Vuln for component c.
 func Convert(v *osvpb.Vulnerability, c inventory.Component) Vuln {
-	out := Vuln{ID: v.GetId(), Aliases: v.GetAliases(), Summary: v.GetSummary()}
+	out := Vuln{ID: v.GetId(), Aliases: v.GetAliases(), Summary: v.GetSummary(), URL: AdvisoryURL(v.GetId())}
 	for _, s := range v.GetSeverity() {
 		if s.GetType() == osvpb.Severity_CVSS_V3 {
 			if score, ok := CVSS3(s.GetScore()); ok {

@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/attackscout/attackscout-agent/internal/eol"
 	"github.com/attackscout/attackscout-agent/internal/i18n"
 	"github.com/attackscout/attackscout-agent/internal/inventory"
 	"github.com/attackscout/attackscout-agent/internal/report"
@@ -21,7 +22,7 @@ import (
 )
 
 // Version is set at build time with -ldflags "-X ...cli.Version=x.y.z".
-var Version = "0.1.0"
+var Version = "0.2.0"
 
 // Exit codes.
 const (
@@ -34,6 +35,8 @@ const (
 var (
 	osvAPI      = vulns.DefaultAPI
 	archiveHost = vulns.DefaultArchiveHost
+	kevURL      = vulns.DefaultKEVURL
+	eolBase     = vulns.DefaultEOLBase
 )
 
 // Environment of a run, replaced by tests.
@@ -46,6 +49,7 @@ type env struct {
 	apache  []string
 	roots   []string
 	phpDirs []string
+	sysroot string
 }
 
 func defaultEnv() env {
@@ -60,6 +64,7 @@ func defaultEnv() env {
 	e.apache = []string{"/etc/apache2", "/etc/httpd", "/usr/local/etc/httpd", "/opt/homebrew/etc/httpd"}
 	e.roots = []string{"/var/www/html", "/srv/www", "/usr/share/nginx/html", "/var/www"}
 	e.phpDirs = []string{"/etc/php", "/etc/opt/remi"}
+	e.sysroot = "/"
 	return e
 }
 
@@ -76,17 +81,21 @@ Scan flags:
   --nginx DIR      nginx configuration directory (default: detected)
   --apache DIR     Apache configuration directory (default: detected)
   --cert FILE      PEM certificate to check (repeatable)
-  --json           JSON output
-  --fail-on SEV    exit 1 when a finding is at least info, low, medium, high or critical
+  --format F       text (default), json or sarif
+  --json           same as --format json
+  --output FILE    write the report to FILE instead of the standard output
+  --fail-on SEV    exit 1 when a finding is at least critical, high, medium, low or info
+  --no-audit-link  hide the link to the free external audit (text output)
+  --sysroot DIR    where to read the dpkg, rpm and apk databases (default: /)
   --lang LANG      en (default) or fr
   --online         query api.osv.dev (sends package names, versions and ecosystems only)
-  --db DIR         OSV database directory (default: user cache)
+  --db DIR         database directory (default: user cache)
 
-db update flags:
-  --db DIR         OSV database directory (default: user cache)
-  --ecosystems L   comma-separated list (default: npm,Packagist,PyPI,NuGet,Go)
-
-Free external audit: ` + report.AuditURL + "\n"
+db update flags (downloads OSV archives, the CISA KEV list and endoflife.date data):
+  --db DIR         database directory (default: user cache)
+  --ecosystems L   comma-separated OSV ecosystems (default: npm,Packagist,PyPI,NuGet,Go,RubyGems,Maven
+                   and the ecosystem of this system: Debian, Ubuntu, Alpine, Red Hat...)
+`
 
 // Run executes the command line and returns the exit code.
 func Run(args []string, stdout, stderr io.Writer) int {
@@ -103,7 +112,7 @@ func run(args []string, stdout, stderr io.Writer, e env) int {
 		return runScan(args[1:], stdout, stderr, e)
 	case "db":
 		if len(args) > 1 && args[1] == "update" {
-			return runDBUpdate(args[2:], stdout, stderr)
+			return runDBUpdate(args[2:], stdout, stderr, e)
 		}
 		_, _ = fmt.Fprint(stderr, usage)
 		return ExitUsage
@@ -131,6 +140,10 @@ func runScan(args []string, stdout, stderr io.Writer, e env) int {
 	nginx := fs.String("nginx", "", "")
 	apache := fs.String("apache", "", "")
 	asJSON := fs.Bool("json", false, "")
+	format := fs.String("format", "text", "")
+	output := fs.String("output", "", "")
+	noAudit := fs.Bool("no-audit-link", false, "")
+	sysroot := fs.String("sysroot", e.sysroot, "")
 	failOn := fs.String("fail-on", "none", "")
 	lang := fs.String("lang", "en", "")
 	online := fs.Bool("online", false, "")
@@ -144,6 +157,13 @@ func runScan(args []string, stdout, stderr io.Writer, e env) int {
 	threshold, err := scan.ParseSeverity(*failOn)
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err)
+		return ExitUsage
+	}
+	if *asJSON {
+		*format = "json"
+	}
+	if *format != "text" && *format != "json" && *format != "sarif" {
+		_, _ = fmt.Fprintf(stderr, "unknown format %q (text, json, sarif)\n", *format)
 		return ExitUsage
 	}
 	if !i18n.Valid(*lang) {
@@ -168,12 +188,26 @@ func runScan(args []string, stdout, stderr io.Writer, e env) int {
 		m = onlineMatcher()
 	}
 	o := scan.Options{Root: *root, Projects: projects, Nginx: *nginx, Apache: *apache, Certs: certs,
-		Now: e.now(), Exec: e.exec, PHPHintDirs: e.phpDirs, Matcher: m, GOOS: e.goos}
+		Now: e.now(), Exec: e.exec, PHPHintDirs: e.phpDirs, Matcher: m, GOOS: e.goos,
+		EOL: eol.Load(dbDir), KEV: vulns.LoadKEV(dbDir), SysRoot: *sysroot}
 	rep := scan.Run(context.Background(), o)
-	if *asJSON {
-		err = report.JSON(stdout, rep, Version, *lang)
-	} else {
-		err = report.Text(stdout, rep, Version, *lang)
+	out := stdout
+	if *output != "" {
+		f, ferr := os.Create(*output)
+		if ferr != nil {
+			_, _ = fmt.Fprintln(stderr, ferr)
+			return ExitUsage
+		}
+		defer func() { _ = f.Close() }()
+		out = f
+	}
+	switch *format {
+	case "json":
+		err = report.JSON(out, rep, Version, *lang)
+	case "sarif":
+		err = report.SARIF(out, rep, Version, *lang)
+	default:
+		err = report.Text(out, rep, Version, *lang, !*noAudit)
 	}
 	if err != nil {
 		_, _ = fmt.Fprintln(stderr, err)
@@ -195,11 +229,15 @@ func onlineMatcher() vulns.Matcher {
 }
 
 // runDBUpdate is one of the two paths allowed to use the network (db update).
-func runDBUpdate(args []string, stdout, stderr io.Writer) int {
+func runDBUpdate(args []string, stdout, stderr io.Writer, e env) int {
 	fs := flag.NewFlagSet("db update", flag.ContinueOnError)
 	fs.SetOutput(stderr)
 	db := fs.String("db", "", "")
-	ecos := fs.String("ecosystems", strings.Join(inventory.Ecosystems, ","), "")
+	defaults := append([]string{}, inventory.Ecosystems...)
+	if osEco := inventory.OSEcosystem(e.sysroot); osEco != "" {
+		defaults = append(defaults, osEco)
+	}
+	ecos := fs.String("ecosystems", strings.Join(defaults, ","), "")
 	if err := fs.Parse(args); err != nil {
 		return ExitUsage
 	}
@@ -208,12 +246,15 @@ func runDBUpdate(args []string, stdout, stderr io.Writer) int {
 		dir = vulns.DefaultDir()
 	}
 	var list []string
-	for _, e := range strings.Split(*ecos, ",") {
-		if e = strings.TrimSpace(e); e != "" {
-			list = append(list, e)
+	for _, eco := range strings.Split(*ecos, ",") {
+		if eco = strings.TrimSpace(eco); eco != "" {
+			list = append(list, eco)
 		}
 	}
 	res := vulns.Update(context.Background(), dir, archiveHost, vulns.NewHTTPClient(), list)
+	for k, v := range vulns.UpdateFeeds(context.Background(), dir, kevURL, eolBase, vulns.NewHTTPClient(), eol.Slugs, eol.CachePath) {
+		res[k] = v
+	}
 	keys := make([]string, 0, len(res))
 	for k := range res {
 		keys = append(keys, k)
@@ -226,7 +267,7 @@ func runDBUpdate(args []string, stdout, stderr io.Writer) int {
 			code = ExitFindings
 			continue
 		}
-		_, _ = fmt.Fprintf(stdout, "%s: %s\n", k, vulns.ArchivePath(dir, k))
+		_, _ = fmt.Fprintf(stdout, "%s: ok (%s)\n", k, dir)
 	}
 	return code
 }

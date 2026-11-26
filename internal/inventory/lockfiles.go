@@ -17,11 +17,15 @@ import (
 	"github.com/google/osv-scalibr/extractor/filesystem/language/dotnet/csproj"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/dotnet/packagesconfig"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/dotnet/packageslockjson"
+	"github.com/google/osv-scalibr/extractor/filesystem/language/golang/gomod"
+	"github.com/google/osv-scalibr/extractor/filesystem/language/java/pomxml"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/javascript/packagelockjson"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/javascript/pnpmlock"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/javascript/yarnlock"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/php/composerlock"
+	"github.com/google/osv-scalibr/extractor/filesystem/language/python/poetrylock"
 	"github.com/google/osv-scalibr/extractor/filesystem/language/python/requirements"
+	"github.com/google/osv-scalibr/extractor/filesystem/language/ruby/gemfilelock"
 	"github.com/google/osv-scalibr/extractor/filesystem/simplefileapi"
 	scalibrfs "github.com/google/osv-scalibr/fs"
 	scalibrlog "github.com/google/osv-scalibr/log"
@@ -31,7 +35,10 @@ import (
 var extractorFactories = []func(*cpb.PluginConfig) (filesystem.Extractor, error){
 	packagelockjson.New, yarnlock.New, pnpmlock.New,
 	composerlock.New,
-	requirements.New,
+	requirements.New, poetrylock.New,
+	gemfilelock.New,
+	gomod.New,
+	pomxml.New,
 	packageslockjson.New, csproj.New, packagesconfig.New,
 }
 
@@ -57,7 +64,7 @@ func (quiet) Debug(...any)          {}
 const maxLockDepth = 8
 
 // Lockfiles reads npm, Yarn (v1 and Berry), pnpm, Composer, pip
-// requirements and NuGet files under dir with the osv-scalibr extractors.
+// requirements, Poetry, Bundler, Go modules, Maven and NuGet files under dir with the osv-scalibr extractors.
 // Only the file walk is done here; parsing is left to the library.
 func Lockfiles(dir string) ([]Component, error) {
 	var exts []filesystem.Extractor
@@ -90,6 +97,12 @@ func Lockfiles(dir string) ([]Component, error) {
 		if err != nil || !info.Mode().IsRegular() || info.Size() > 64<<20 {
 			return nil
 		}
+		if d.Name() == "go.sum" {
+			if _, err := os.Stat(filepath.Join(filepath.Dir(p), "go.mod")); err != nil {
+				out = append(out, GoSum(p)...)
+			}
+			return nil
+		}
 		for _, e := range exts {
 			if !e.FileRequired(simplefileapi.New(rel, info)) {
 				continue
@@ -101,7 +114,7 @@ func Lockfiles(dir string) ([]Component, error) {
 			}
 			for _, pkg := range pkgs {
 				eco := EcosystemOfPURL(pkg.PURLType)
-				if eco == "" || pkg.Version == "" {
+				if eco == "" || pkg.Version == "" || strings.Contains(pkg.Version, "${") {
 					continue
 				}
 				out = append(out, Component{Kind: KindDependency, Name: pkg.Name, Version: pkg.Version,
@@ -170,4 +183,45 @@ func Frameworks(dir string, deps []Component) []Component {
 		}
 	}
 	return out
+}
+
+// GoSum reads a go.sum without its go.mod: the highest version of each
+// module is kept. The versions are exact but may include unused ones.
+func GoSum(path string) []Component {
+	data, err := readSmall(path)
+	if err != nil {
+		return nil
+	}
+	best := map[string]string{}
+	var order []string
+	for _, line := range strings.Split(string(data), "\n") {
+		f := strings.Fields(line)
+		if len(f) != 3 || strings.HasSuffix(f[1], "/go.mod") {
+			continue
+		}
+		v := strings.TrimPrefix(f[1], "v")
+		if old, ok := best[f[0]]; !ok {
+			order = append(order, f[0])
+			best[f[0]] = v
+		} else if semverLess(old, v) {
+			best[f[0]] = v
+		}
+	}
+	var out []Component
+	for _, m := range order {
+		out = append(out, Component{Kind: KindDependency, Name: m, Version: best[m], Ecosystem: EcoGo, Package: m, Source: path, Exact: true})
+	}
+	return out
+}
+
+// semverLess compares the numeric parts of two versions.
+func semverLess(a, b string) bool {
+	pa := strings.FieldsFunc(a, func(r rune) bool { return r == '.' || r == '-' || r == '+' })
+	pb := strings.FieldsFunc(b, func(r rune) bool { return r == '.' || r == '-' || r == '+' })
+	for i := 0; i < len(pa) && i < len(pb) && i < 3; i++ {
+		if pa[i] != pb[i] {
+			return numLess(pa[i], pb[i])
+		}
+	}
+	return len(pa) < len(pb) && len(pa) < 3
 }

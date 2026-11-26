@@ -108,13 +108,13 @@ func TestCommands(t *testing.T) {
 	if c, out, _ := runT(t, e, "version"); c != ExitOK || out != "attackscout-agent "+Version+"\n" {
 		t.Error(out)
 	}
-	if c, out, _ := runT(t, e, "help"); c != ExitOK || !strings.Contains(out, report.AuditURL) {
+	if c, out, _ := runT(t, e, "help"); c != ExitOK || !strings.Contains(out, "--format") || strings.Contains(out, report.AuditURL) {
 		t.Error("help")
 	}
 	if c, _, _ := runT(t, e, "db"); c != ExitUsage {
 		t.Error("db without subcommand")
 	}
-	for _, bad := range [][]string{{"scan", "--fail-on", "severe"}, {"scan", "--lang", "de"}, {"scan", "--nope"}, {"db", "update", "--nope"}} {
+	for _, bad := range [][]string{{"scan", "--fail-on", "severe"}, {"scan", "--lang", "de"}, {"scan", "--nope"}, {"db", "update", "--nope"}, {"scan", "--format", "xml"}, {"scan", "--output", "/nonexistent-dir/x/report.txt"}} {
 		if c, _, _ := runT(t, e, bad...); c != ExitUsage {
 			t.Errorf("%v accepted", bad)
 		}
@@ -162,7 +162,7 @@ func TestScanFailOnAndJSON(t *testing.T) {
 	if err := json.Unmarshal([]byte(out), &got); err != nil {
 		t.Fatal(err)
 	}
-	if got["lang"] != "fr" || got["external_audit"] != report.AuditURL || got["cve_mode"] != "offline" {
+	if _, ok := got["external_audit"]; ok || strings.Contains(out, report.AuditURL) || got["lang"] != "fr" || got["cve_mode"] != "offline" {
 		t.Errorf("%v", got)
 	}
 	found := false
@@ -272,7 +272,14 @@ func TestOnline(t *testing.T) {
 func TestDBUpdate(t *testing.T) {
 	data := npmZip(t)
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/npm/all.zip" {
+		switch {
+		case r.URL.Path == "/kev":
+			_, _ = w.Write([]byte(`{"vulnerabilities":[{"cveID":"CVE-2021-23337","dateAdded":"2024-01-01","knownRansomwareCampaignUse":"Unknown"}]}`))
+			return
+		case strings.HasPrefix(r.URL.Path, "/eol/"):
+			_, _ = w.Write([]byte(`{"result":{"releases":[{"name":"8.3","isEol":false,"eolFrom":"2027-12-31","latest":{"name":"8.3.99"}}]}}`))
+			return
+		case r.URL.Path != "/npm/all.zip":
 			http.NotFound(w, r)
 			return
 		}
@@ -283,8 +290,9 @@ func TestDBUpdate(t *testing.T) {
 	}))
 	defer srv.Close()
 	old := archiveHost
-	archiveHost = srv.URL
-	defer func() { archiveHost = old }()
+	oldKEV, oldEOL := kevURL, eolBase
+	archiveHost, kevURL, eolBase = srv.URL, srv.URL+"/kev", srv.URL+"/eol"
+	defer func() { archiveHost, kevURL, eolBase = old, oldKEV, oldEOL }()
 	dir := t.TempDir()
 	code, out, errs := runT(t, testEnv(), "db", "update", "--db", dir, "--ecosystems", "npm, PyPI,")
 	if code != ExitFindings || !strings.Contains(out, "npm: ") || !strings.Contains(errs, "PyPI: ") {
@@ -300,11 +308,55 @@ func TestDBUpdate(t *testing.T) {
 	if !strings.Contains(out, "CVE-2021-23337") || netGuard.calls.Load() != before {
 		t.Fatalf("offline scan after update:\n%s", out)
 	}
+	// the KEV list marks the CVE as exploited, the endoflife.date data is used
+	if !strings.Contains(out, "EXPLOITED IN THE WILD") || !strings.Contains(out, "1 vulnerabilities are exploited") {
+		t.Fatalf("KEV not applied:\n%s", out)
+	}
+	if _, err := os.Stat(filepath.Join(dir, "endoflife", "php.json")); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestRunPublic(t *testing.T) {
 	var out, errb bytes.Buffer
 	if Run([]string{"version"}, &out, &errb) != ExitOK {
 		t.Error("Run")
+	}
+}
+
+func TestFormatsAndAuditLink(t *testing.T) {
+	db := localDB(t)
+	proj := filepath.Join(td, "project")
+	// text: the link is shown by default, hidden by --no-audit-link
+	_, out, _ := runT(t, testEnv(), "scan", "--project", proj, "--db", db)
+	if !strings.Contains(out, report.AuditURL) || !strings.Contains(out, "utm_source=") {
+		t.Fatalf("audit link missing:\n%s", out)
+	}
+	_, out, _ = runT(t, testEnv(), "scan", "--project", proj, "--db", db, "--no-audit-link")
+	if strings.Contains(out, "attackscout.com") {
+		t.Fatalf("audit link not hidden:\n%s", out)
+	}
+	// SARIF, written to a file
+	file := filepath.Join(t.TempDir(), "r.sarif")
+	code, out, _ := runT(t, testEnv(), "scan", "--project", proj, "--db", db, "--format", "sarif", "--output", file, "--fail-on", "high")
+	if code != ExitFindings || out != "" {
+		t.Fatalf("%d %q", code, out)
+	}
+	data, err := os.ReadFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var s map[string]any
+	if err := json.Unmarshal(data, &s); err != nil || s["version"] != "2.1.0" || strings.Contains(string(data), report.AuditURL) {
+		t.Fatalf("%v %s", err, data)
+	}
+	if !strings.Contains(string(data), "CVE-2021-23337") {
+		t.Fatal("CVE missing from SARIF")
+	}
+	// --fail-on thresholds
+	for sev, want := range map[string]int{"critical": ExitOK, "high": ExitFindings, "medium": ExitFindings} {
+		if c, _, _ := runT(t, testEnv(), "scan", "--project", proj, "--db", db, "--format", "json", "--fail-on", sev); c != want {
+			t.Errorf("--fail-on %s: %d", sev, c)
+		}
 	}
 }

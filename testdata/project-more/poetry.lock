@@ -1,0 +1,11 @@
+[[package]]
+name = "django"
+version = "3.2.0"
+description = "web framework"
+optional = false
+python-versions = ">=3.6"
+
+[metadata]
+lock-version = "2.0"
+python-versions = "^3.10"
+content-hash = "x"
