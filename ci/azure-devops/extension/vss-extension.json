@@ -1,0 +1,31 @@
+{
+  "manifestVersion": 1,
+  "id": "attackscout-agent",
+  "publisher": "AttackScout",
+  "version": "0.2.0",
+  "name": "AttackScout agent",
+  "description": "Check a website from the inside in Azure Pipelines: CVEs (OSV) with CISA KEV, end of life, exposed files, permissions and web server configuration. SARIF report for the Scans tab.",
+  "public": false,
+  "categories": ["Azure Pipelines"],
+  "tags": ["security", "cve", "sarif", "wordpress", "sca", "kev"],
+  "targets": [{ "id": "Microsoft.VisualStudio.Services" }],
+  "icons": { "default": "images/icon.png" },
+  "content": { "details": { "path": "overview.md" } },
+  "links": {
+    "repository": { "uri": "https://github.com/AttackScout/attackscout-agent" },
+    "support": { "uri": "https://github.com/AttackScout/attackscout-agent/issues" }
+  },
+  "repository": { "type": "git", "uri": "https://github.com/AttackScout/attackscout-agent" },
+  "files": [
+    { "path": "tasks/AttackScoutAgentV0" },
+    { "path": "images", "addressable": true }
+  ],
+  "contributions": [
+    {
+      "id": "attackscout-agent-task",
+      "type": "ms.vss-distributed-task.task",
+      "targets": ["ms.vss-distributed-task.tasks"],
+      "properties": { "name": "tasks/AttackScoutAgentV0" }
+    }
+  ]
+}

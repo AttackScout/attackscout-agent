@@ -1,0 +1,51 @@
+# attackscout-agent for GitLab CI.
+#
+# Include it from your .gitlab-ci.yml:
+#
+#   include:
+#     - remote: https://raw.githubusercontent.com/AttackScout/attackscout-agent/v0.2.0/ci/gitlab/attackscout-agent.gitlab-ci.yml
+#
+#   attackscout-agent:
+#     variables:
+#       ATTACKSCOUT_FAIL_ON: high
+#
+# The job writes a SARIF report (artifact, and GitLab security report when
+# your tier reads SARIF) and a JSON report, and prints the text report in
+# the job log. The scan itself never uses the network; only the
+# "db update" step downloads the OSV, CISA KEV and endoflife.date data.
+
+variables:
+  ATTACKSCOUT_VERSION: "0.2.0"
+  ATTACKSCOUT_PATH: "."
+  ATTACKSCOUT_FAIL_ON: "high"
+  ATTACKSCOUT_ARGS: ""
+  ATTACKSCOUT_DB_UPDATE: "true"
+  ATTACKSCOUT_ECOSYSTEMS: ""
+
+attackscout-agent:
+  stage: test
+  image: ghcr.io/attackscout/attackscout-agent:${ATTACKSCOUT_VERSION}
+  # the image entrypoint is the tool; GitLab needs a shell
+  entrypoint: [""]
+  cache:
+    key: attackscout-agent-db
+    paths:
+      - .attackscout-db/
+  script:
+    - |
+      if [ "${ATTACKSCOUT_DB_UPDATE}" = "true" ]; then
+        if [ -n "${ATTACKSCOUT_ECOSYSTEMS}" ]; then
+          attackscout-agent db update --db .attackscout-db --ecosystems "${ATTACKSCOUT_ECOSYSTEMS}" || echo "some databases could not be downloaded"
+        else
+          attackscout-agent db update --db .attackscout-db || echo "some databases could not be downloaded"
+        fi
+      fi
+    - attackscout-agent scan --db .attackscout-db --root "${ATTACKSCOUT_PATH}" --project "${ATTACKSCOUT_PATH}" --format sarif --output gl-attackscout-agent.sarif ${ATTACKSCOUT_ARGS} || true
+    - attackscout-agent scan --db .attackscout-db --root "${ATTACKSCOUT_PATH}" --project "${ATTACKSCOUT_PATH}" --format json --output attackscout-agent.json ${ATTACKSCOUT_ARGS} || true
+    - attackscout-agent scan --db .attackscout-db --root "${ATTACKSCOUT_PATH}" --project "${ATTACKSCOUT_PATH}" --fail-on "${ATTACKSCOUT_FAIL_ON}" --no-audit-link ${ATTACKSCOUT_ARGS}
+  artifacts:
+    when: always
+    paths:
+      - gl-attackscout-agent.sarif
+      - attackscout-agent.json
+    expire_in: 30 days

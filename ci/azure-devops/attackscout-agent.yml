@@ -1,0 +1,85 @@
+# attackscout-agent for Azure Pipelines (steps template).
+#
+# Copy this file into your repository (for example ci/attackscout-agent.yml),
+# or reference it from a repository resource, then:
+#
+#   steps:
+#     - checkout: self
+#     - template: ci/attackscout-agent.yml
+#       parameters:
+#         failOn: high
+#
+# The SARIF report is published as the "CodeAnalysisLogs" artifact, which
+# the SARIF SAST Scans Tab extension (Microsoft DevLabs) shows in the build.
+# The scan itself never uses the network; only "db update" downloads data.
+
+parameters:
+  - name: version
+    type: string
+    default: "0.2.0"
+  - name: path
+    type: string
+    default: "$(Build.SourcesDirectory)"
+  - name: failOn
+    type: string
+    default: high
+    values: [critical, high, medium, low, info, none]
+  - name: args
+    type: string
+    default: ""
+  - name: dbUpdate
+    type: boolean
+    default: true
+  - name: ecosystems
+    type: string
+    default: ""
+
+steps:
+  - bash: |
+      set -euo pipefail
+      case "$(uname -s)" in
+        Linux) os=linux; ext=tar.gz ;;
+        Darwin) os=darwin; ext=tar.gz ;;
+        MINGW*|MSYS*|CYGWIN*) os=windows; ext=zip ;;
+        *) echo "unsupported system" >&2; exit 1 ;;
+      esac
+      case "$(uname -m)" in
+        x86_64|amd64) arch=amd64 ;;
+        aarch64|arm64) arch=arm64 ;;
+        *) echo "unsupported architecture" >&2; exit 1 ;;
+      esac
+      v="${{ parameters.version }}"
+      name="attackscout-agent_${v}_${os}_${arch}.${ext}"
+      base="https://github.com/AttackScout/attackscout-agent/releases/download/v${v}"
+      dir="$(Agent.TempDirectory)/attackscout-agent"
+      mkdir -p "$dir"
+      curl -fsSL -o "$dir/$name" "$base/$name"
+      curl -fsSL -o "$dir/checksums.txt" "$base/checksums.txt"
+      (cd "$dir" && grep " ${name}\$" checksums.txt | sha256sum -c -)
+      if [ "$ext" = zip ]; then unzip -o -q "$dir/$name" -d "$dir"; else tar -xzf "$dir/$name" -C "$dir"; fi
+      echo "##vso[task.prependpath]$dir"
+    displayName: Install attackscout-agent ${{ parameters.version }}
+
+  - ${{ if eq(parameters.dbUpdate, true) }}:
+      - bash: |
+          if [ -n "${{ parameters.ecosystems }}" ]; then
+            attackscout-agent db update --ecosystems "${{ parameters.ecosystems }}" || echo "##vso[task.logissue type=warning]some databases could not be downloaded"
+          else
+            attackscout-agent db update || echo "##vso[task.logissue type=warning]some databases could not be downloaded"
+          fi
+        displayName: Update the vulnerability databases
+
+  - bash: |
+      set -uo pipefail
+      out="$(Build.ArtifactStagingDirectory)/CodeAnalysisLogs"
+      mkdir -p "$out"
+      attackscout-agent scan --root "${{ parameters.path }}" --project "${{ parameters.path }}" --format sarif --output "$out/attackscout-agent.sarif" ${{ parameters.args }} || true
+      attackscout-agent scan --root "${{ parameters.path }}" --project "${{ parameters.path }}" --fail-on "${{ parameters.failOn }}" --no-audit-link ${{ parameters.args }}
+    displayName: Scan with attackscout-agent
+
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    displayName: Publish the SARIF report
+    inputs:
+      PathtoPublish: $(Build.ArtifactStagingDirectory)/CodeAnalysisLogs
+      ArtifactName: CodeAnalysisLogs

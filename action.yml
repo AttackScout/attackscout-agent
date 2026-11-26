@@ -1,0 +1,131 @@
+name: AttackScout agent
+description: Check a website from the inside (CVEs with CISA KEV, end of life, exposed files, permissions, web server configuration) and upload the SARIF report to GitHub code scanning.
+author: AttackScout
+branding:
+  icon: shield
+  color: blue
+
+inputs:
+  version:
+    description: attackscout-agent version to install (for example 0.2.0), or "latest".
+    default: latest
+  path:
+    description: Directory to scan, used as the web root (--root) and as a project with lockfiles (--project).
+    default: "."
+  args:
+    description: Extra arguments for "attackscout-agent scan" (for example "--nginx deploy/nginx").
+    default: ""
+  fail-on:
+    description: Fail the step when a finding is at least critical, high, medium, low or info. "none" never fails.
+    default: high
+  db-update:
+    description: Download the OSV, CISA KEV and endoflife.date data before the scan ("true" or "false"). The scan itself stays offline.
+    default: "true"
+  ecosystems:
+    description: OSV ecosystems to download (comma-separated). Empty means the tool defaults.
+    default: ""
+  upload-sarif:
+    description: Upload the SARIF report to the Security tab ("true" or "false"). Needs the security-events write permission.
+    default: "true"
+  sarif-file:
+    description: Where to write the SARIF report.
+    default: attackscout-agent.sarif
+  category:
+    description: Code scanning category, to tell several scans apart.
+    default: attackscout-agent
+
+outputs:
+  sarif-file:
+    description: Path of the SARIF report.
+    value: ${{ steps.scan.outputs.sarif-file }}
+  exit-code:
+    description: Exit code of the scan (0 nothing above the threshold, 1 a finding reached --fail-on).
+    value: ${{ steps.scan.outputs.exit-code }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install attackscout-agent
+      shell: bash
+      env:
+        AS_VERSION: ${{ inputs.version }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        set -euo pipefail
+        case "${RUNNER_OS}" in
+          Linux) os=linux; ext=tar.gz ;;
+          macOS) os=darwin; ext=tar.gz ;;
+          Windows) os=windows; ext=zip ;;
+          *) echo "unsupported runner ${RUNNER_OS}" >&2; exit 1 ;;
+        esac
+        case "${RUNNER_ARCH}" in
+          X64) arch=amd64 ;;
+          ARM64) arch=arm64 ;;
+          *) echo "unsupported architecture ${RUNNER_ARCH}" >&2; exit 1 ;;
+        esac
+        repo=AttackScout/attackscout-agent
+        version="${AS_VERSION#v}"
+        if [ "${version}" = "latest" ]; then
+          version="$(gh release view --repo "${repo}" --json tagName --jq .tagName)"
+          version="${version#v}"
+        fi
+        name="attackscout-agent_${version}_${os}_${arch}.${ext}"
+        dir="${RUNNER_TEMP}/attackscout-agent"
+        mkdir -p "${dir}"
+        gh release download "v${version}" --repo "${repo}" --pattern "${name}" --pattern checksums.txt --dir "${dir}" --clobber
+        (cd "${dir}" && grep " ${name}\$" checksums.txt | sha256sum -c -)
+        if [ "${ext}" = "zip" ]; then
+          unzip -o -q "${dir}/${name}" -d "${dir}"
+        else
+          tar -xzf "${dir}/${name}" -C "${dir}"
+        fi
+        echo "${dir}" >> "${GITHUB_PATH}"
+
+    - name: Update the vulnerability databases
+      if: inputs.db-update == 'true'
+      shell: bash
+      env:
+        AS_ECOSYSTEMS: ${{ inputs.ecosystems }}
+      run: |
+        set -uo pipefail
+        if [ -n "${AS_ECOSYSTEMS}" ]; then
+          attackscout-agent db update --ecosystems "${AS_ECOSYSTEMS}" || echo "::warning::some databases could not be downloaded"
+        else
+          attackscout-agent db update || echo "::warning::some databases could not be downloaded"
+        fi
+
+    - name: Scan
+      id: scan
+      shell: bash
+      env:
+        AS_PATH: ${{ inputs.path }}
+        AS_ARGS: ${{ inputs.args }}
+        AS_FAIL_ON: ${{ inputs.fail-on }}
+        AS_SARIF: ${{ inputs.sarif-file }}
+      run: |
+        set -uo pipefail
+        # shellcheck disable=SC2086
+        attackscout-agent scan --root "${AS_PATH}" --project "${AS_PATH}" --format sarif --output "${AS_SARIF}" --fail-on "${AS_FAIL_ON}" ${AS_ARGS}
+        code=$?
+        echo "sarif-file=${AS_SARIF}" >> "${GITHUB_OUTPUT}"
+        echo "exit-code=${code}" >> "${GITHUB_OUTPUT}"
+        # the text report goes to the job log
+        # shellcheck disable=SC2086
+        attackscout-agent scan --root "${AS_PATH}" --project "${AS_PATH}" --no-audit-link ${AS_ARGS} || true
+        if [ "${code}" -ge 2 ]; then exit "${code}"; fi
+
+    - name: Upload SARIF to GitHub code scanning
+      if: always() && inputs.upload-sarif == 'true' && steps.scan.outputs.sarif-file != ''
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-file }}
+        category: ${{ inputs.category }}
+
+    - name: Apply the failure threshold
+      if: steps.scan.outputs.exit-code == '1'
+      shell: bash
+      env:
+        AS_FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        echo "::error::attackscout-agent found at least one ${AS_FAIL_ON} finding (see the Security tab)"
+        exit 1

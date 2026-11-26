@@ -1,0 +1,26 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Microsoft/azure-pipelines-task-lib/master/tasks.schema.json",
+  "id": "5d0b6a52-7c1e-4a1f-9c55-2f4a8e0b7a31",
+  "name": "AttackScoutAgent",
+  "friendlyName": "AttackScout agent",
+  "description": "Check a website from the inside: CVEs (OSV) with CISA KEV, end of life, exposed files, permissions, web server configuration. Writes a SARIF report.",
+  "helpMarkDown": "[Documentation](https://github.com/AttackScout/attackscout-agent/blob/main/docs/azure-devops.md)",
+  "category": "Test",
+  "author": "AttackScout",
+  "version": { "Major": 0, "Minor": 2, "Patch": 0 },
+  "minimumAgentVersion": "3.232.1",
+  "instanceNameFormat": "attackscout-agent scan $(path)",
+  "inputs": [
+    { "name": "version", "type": "string", "label": "Version", "defaultValue": "0.2.0", "required": true, "helpMarkDown": "attackscout-agent release to download from GitHub." },
+    { "name": "path", "type": "filePath", "label": "Directory to scan", "defaultValue": "$(Build.SourcesDirectory)", "required": true },
+    { "name": "failOn", "type": "pickList", "label": "Fail on", "defaultValue": "high", "required": true,
+      "options": { "critical": "critical", "high": "high", "medium": "medium", "low": "low", "info": "info", "none": "none" } },
+    { "name": "dbUpdate", "type": "boolean", "label": "Update the databases first", "defaultValue": "true", "required": false },
+    { "name": "ecosystems", "type": "string", "label": "OSV ecosystems", "defaultValue": "", "required": false, "helpMarkDown": "Comma-separated list; empty for the tool defaults." },
+    { "name": "args", "type": "string", "label": "Extra scan arguments", "defaultValue": "", "required": false },
+    { "name": "sarifDir", "type": "string", "label": "SARIF directory", "defaultValue": "$(Build.ArtifactStagingDirectory)/CodeAnalysisLogs", "required": true }
+  ],
+  "execution": {
+    "Node20_1": { "target": "index.js" }
+  }
+}
