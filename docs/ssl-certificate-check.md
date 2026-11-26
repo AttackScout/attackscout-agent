@@ -34,6 +34,6 @@ Renew the certificate and reload the web server. For a weak key or signature, re
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [Headers](web-server-security-headers.md) | [Exposed files](exposed-files-web-root.md) | [Command line](command-line-reference.md)

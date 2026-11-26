@@ -8,7 +8,7 @@
 - **Rien n'est envoyé par défaut.** Ni télémétrie, ni vérification de mise à jour. Deux options explicites utilisent le réseau (`db update`, `--online`), décrites dans [Réseau : ce qui sort de la machine](#réseau--ce-qui-sort-de-la-machine).
 - **Un seul binaire statique**, écrit en Go. Pas d'agent, pas de compte, pas de service à installer.
 
-Il complète [AttackScout](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent), qui audite ce qu'Internet voit d'un domaine. Cet outil est à part et gratuit ; il ne fait pas partie du service AttackScout.
+Il complète [AttackScout](https://attackscout.com/fr?utm_source=attackscout-agent&utm_medium=readme&utm_campaign=readme), qui audite ce qu'Internet voit d'un domaine. Cet outil est à part et gratuit ; il ne fait pas partie du service AttackScout.
 
 ## Sommaire
 
@@ -44,7 +44,16 @@ sudo install attackscout-agent /usr/local/bin/
 
 Windows (PowerShell) : téléchargez le `.zip` depuis la page de la version, comparez-le à `checksums.txt` avec `Get-FileHash -Algorithm SHA256`, extrayez-le, puis lancez `.\attackscout-agent.exe scan`.
 
-Homebrew : bientôt. Vérifiez l'installation avec `attackscout-agent version`.
+Paquets :
+
+| Canal | Commande |
+|---|---|
+| Homebrew | `brew install --cask attackscout/tap/attackscout-agent` |
+| Scoop | `scoop bucket add attackscout https://github.com/AttackScout/scoop-bucket` puis `scoop install attackscout-agent` |
+| winget | `winget install AttackScout.AttackscoutAgent` |
+| Docker | `docker run --rm -v "$PWD:/src:ro" ghcr.io/attackscout/attackscout-agent:0.2.0` |
+
+Vérifiez l'installation avec `attackscout-agent version`. Détails (en anglais) : [install](docs/install.md).
 
 ## Démarrage rapide et exemple de sortie
 
@@ -55,10 +64,11 @@ attackscout-agent scan
 # chemins explicites, rapport en français, échec du job sur les constats élevés
 attackscout-agent scan --root /var/www/site --nginx /etc/nginx --cert /etc/ssl/site.pem --lang fr --fail-on high
 
-# JSON pour les scripts
-attackscout-agent scan --root /var/www/site --json > rapport.json
+# JSON pour les scripts, SARIF pour l'analyse de code
+attackscout-agent scan --root /var/www/site --format json --output rapport.json
+attackscout-agent scan --root /var/www/site --format sarif --output rapport.sarif
 
-# télécharger une fois les bases de vulnérabilités OSV (réseau), puis analyser hors ligne
+# télécharger les données OSV, KEV de la CISA et endoflife.date (réseau), puis analyser hors ligne
 attackscout-agent db update
 attackscout-agent scan --root /var/www/site --project /srv/app
 ```
@@ -66,7 +76,7 @@ attackscout-agent scan --root /var/www/site --project /srv/app
 La sortie ci-dessous est réelle : elle vient de l'outil lancé sur le faux site WordPress et la configuration nginx du dossier `testdata/` de ce dépôt, sur une machine Windows (d'où la ligne « non applicable » pour les droits ; sous Linux ils sont contrôlés). Elle est abrégée : la liste des constats est coupée là où c'est indiqué.
 
 ```text
-AttackScout agent 0.1.0 - analyse locale, en lecture seule
+AttackScout agent 0.2.0 - analyse locale, en lecture seule
 Réseau : rien n'a été envoyé
 root: wordpress
 nginx: nginx
@@ -97,10 +107,13 @@ Constats
   [...]
 
 Bilan : 4 critique, 4 élevé, 5 moyen, 10 faible, 0 info
+Liste KEV de la CISA absente : lancez « attackscout-agent db update » pour signaler les failles exploitées.
 
 Cette analyse voit l'intérieur du serveur. Pour voir ce qu'Internet en voit, lancez l'audit externe gratuit :
-https://attackscout.com/?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent
+https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=cli&utm_campaign=report
 ```
+
+Ce lien de fin n'apparaît que dans le rapport texte ; `--no-audit-link` le masque.
 
 Avec `--fail-on high`, la même exécution se termine avec le code `1`.
 
@@ -110,10 +123,11 @@ Chaque constat a un identifiant stable, une sévérité (`info`, `low`, `medium`
 
 | Contrôle | Ce qui est regardé | Guide (en anglais) |
 |---|---|---|
-| Fin de vie | PHP, Node.js, .NET, WordPress (cœur, extensions, thèmes), Drupal, Joomla, PrestaShop, React, Next.js, d'après une table de fin de vie embarquée dans le binaire | [End-of-life software](docs/end-of-life-software.md) |
-| Vulnérabilités connues | Fichiers de verrouillage npm, Composer, PyPI, NuGet et Go, fournisseurs Terraform et OpenTofu, comparés à [OSV](https://osv.dev) | [Known vulnerabilities (CVE)](docs/known-vulnerabilities-cve.md) |
+| Fin de vie | PHP, Node.js, .NET, nginx, Apache httpd, IIS, WordPress (cœur, extensions, thèmes), Drupal, Joomla, PrestaShop, React, Next.js, d'après les données [endoflife.date](https://endoflife.date) (embarquées, rafraîchies par `db update`) | [End-of-life software](docs/end-of-life-software.md) |
+| Vulnérabilités connues | `composer.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `requirements.txt`, `poetry.lock`, `Gemfile.lock`, `go.mod` / `go.sum`, `packages.lock.json`, `*.csproj`, `pom.xml`, paquets dpkg / rpm / apk, fournisseurs Terraform, comparés à [OSV](https://osv.dev), avec sévérité CVSS, version corrigée, lien vers l'avis et signalement [KEV de la CISA](https://www.cisa.gov/known-exploited-vulnerabilities-catalog) | [Known vulnerabilities (CVE)](docs/known-vulnerabilities-cve.md), [depth](docs/cve-scanning-depth.md) |
 | Fichiers sensibles | `.env`, `.git/`, dumps SQL et archives, `phpinfo.php`, journaux, clés privées, `.htpasswd`, `terraform.tfstate`... Les noms seulement : le contenu n'est jamais lu | [Exposed files in the web root](docs/exposed-files-web-root.md) |
-| Droits des fichiers | Fichiers et répertoires modifiables par tous, `777`, secrets lisibles par tous (Unix seulement) | [File permissions](docs/file-permissions.md) |
+| Pages phpinfo | Fichiers PHP qui appellent `phpinfo()`, quel que soit leur nom | [Exposed files in the web root](docs/exposed-files-web-root.md) |
+| Droits des fichiers | Fichiers et répertoires modifiables par tous, `777`, secrets lisibles par tous, `wp-config.php` modifiable par son groupe (Unix seulement) | [File permissions](docs/file-permissions.md) |
 | Configuration du serveur web | nginx, Apache et IIS : HSTS, CSP, X-Content-Type-Options, protection contre l'inclusion en cadre, Referrer-Policy, version affichée, liste des répertoires | [Security headers](docs/web-server-security-headers.md) |
 | wp-config.php | Clés et sels par défaut ou absents, `WP_DEBUG`, `WP_DEBUG_DISPLAY`, `DISALLOW_FILE_EDIT`. Les valeurs secrètes ne sont jamais affichées | [wp-config.php security](docs/wordpress-wp-config-security.md) |
 | Certificats | Fichiers PEM locaux : expiration, expiration dans moins de 30 jours, chaîne expirée, clé faible, signature SHA-1 ou MD5 | [Certificate check](docs/ssl-certificate-check.md) |
@@ -129,46 +143,58 @@ Il lit les **fichiers** de certificats sur le disque. Il n'ouvre aucune connexio
 | `--nginx DIR` | Configuration nginx. Par défaut : `/etc/nginx`, `/usr/local/etc/nginx`, `/opt/homebrew/etc/nginx` (`C:\nginx\conf`) |
 | `--apache DIR` | Configuration Apache. Par défaut : `/etc/apache2`, `/etc/httpd`, `/usr/local/etc/httpd`, `/opt/homebrew/etc/httpd` (`C:\Apache24\conf`) |
 | `--cert FILE` | Certificat PEM à vérifier (répétable). Les certificats cités dans la configuration nginx / Apache sont ajoutés |
-| `--json` | Sortie JSON au lieu du texte |
-| `--fail-on SEV` | Code de sortie 1 si un constat atteint `info`, `low`, `medium`, `high` ou `critical`. Par défaut `none` |
+| `--format F` | `text` (par défaut), `json` ou `sarif` |
+| `--json` | Équivaut à `--format json` |
+| `--output FILE` | Écrit le rapport dans un fichier |
+| `--fail-on SEV` | Code de sortie 1 si un constat atteint `critical`, `high`, `medium`, `low` ou `info`. Par défaut `none` |
+| `--no-audit-link` | Masque le lien vers l'audit externe gratuit à la fin du rapport texte |
+| `--sysroot DIR` | Où lire les bases dpkg, rpm et apk. Par défaut `/` |
 | `--lang en\|fr` | Langue du rapport. Par défaut `en` |
 | `--online` | Cherche les CVE avec api.osv.dev au lieu de la base locale |
-| `--db DIR` | Répertoire des bases OSV. Par défaut : cache utilisateur + `attackscout-agent` |
+| `--db DIR` | Répertoire des bases (OSV, KEV de la CISA, endoflife.date). Par défaut : cache utilisateur + `attackscout-agent` |
 
-Commandes : `scan`, `db update` (`--db`, `--ecosystems npm,Packagist,PyPI,NuGet,Go`), `version`, `help`.
+Commandes : `scan`, `db update` (`--db`, `--ecosystems` ; par défaut npm, Packagist, PyPI, NuGet, Go, RubyGems, Maven et l'écosystème du système), `version`, `help`.
 
-Codes de sortie : `0` succès, `1` un constat atteint `--fail-on` (ou `db update` a échoué pour un écosystème), `2` erreur d'usage. Référence complète (en anglais) : [command line](docs/command-line-reference.md).
+Codes de sortie : `0` succès, `1` un constat atteint `--fail-on` (ou `db update` a échoué pour une source), `2` erreur d'usage. Référence complète (en anglais) : [command line](docs/command-line-reference.md).
 
 ## Utilisation en CI
 
-Analysez un projet récupéré par le job (fichiers de verrouillage, Terraform, racine web) et faites échouer le job sur les constats élevés :
+Des intégrations prêtes à l'emploi produisent un rapport SARIF (une alerte par CVE, avec la sévérité CVSS, la version corrigée, le lien vers l'avis et le signalement KEV de la CISA) et font échouer le job au seuil choisi :
 
 ```yaml
-# .github/workflows/server-check.yml
-name: security-check
-on: [push]
+# .github/workflows/attackscout-agent.yml
+name: attackscout-agent
+on: [push, pull_request]
+permissions:
+  contents: read
+  security-events: write
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: AttackScout/attackscout-agent@v0.2.0
         with:
-          go-version: "1.26"
-      - run: go install github.com/attackscout/attackscout-agent@latest
-      - run: attackscout-agent db update            # réseau : télécharge les archives OSV
-      - run: attackscout-agent scan --root . --project . --fail-on high --lang fr
+          fail-on: high
+          args: --lang fr
 ```
 
-L'étape échoue avec le code `1` quand un constat est `high` ou `critical`. Sur un serveur, la même commande fonctionne depuis cron ou un script de déploiement. Plus d'exemples : [use in CI](docs/ci-integration.md).
+| Plateforme | Comment | Guide (en anglais) |
+|---|---|---|
+| GitHub Actions | `uses: AttackScout/attackscout-agent@v0.2.0`, alertes dans l'onglet Sécurité | [GitHub Actions](docs/github-actions.md) |
+| GitLab CI | `include:` de `ci/gitlab/attackscout-agent.gitlab-ci.yml`, artefacts SARIF et JSON | [GitLab CI](docs/gitlab-ci.md) |
+| Azure DevOps | modèle `ci/azure-devops/attackscout-agent.yml` ou tâche `AttackScoutAgent@0` | [Azure DevOps](docs/azure-devops.md) |
+| Autre | `attackscout-agent scan --format sarif --output results.sarif --fail-on high` | [Use in CI](docs/ci-integration.md) |
+
+Sur un serveur, la même commande fonctionne depuis cron ou un script de déploiement.
 
 ## Réseau : ce qui sort de la machine
 
-**Par défaut, rien.** Aucun appel HTTP, aucune télémétrie, aucune vérification de mise à jour. L'analyse lit des fichiers locaux, lance quelques commandes locales si elles existent (`php -v`, `node --version`, `dotnet --list-runtimes`, `terraform version`, `tofu version`), et n'écrit rien.
+**Par défaut, rien.** Aucun appel HTTP, aucune télémétrie, aucune vérification de mise à jour. L'analyse lit des fichiers locaux, lance quelques commandes locales si elles existent (`php -v`, `node --version`, `dotnet --list-runtimes`, `nginx -v`, `apache2 -v` / `httpd -v`, `terraform version`, `tofu version` ; `reg query` pour IIS sous Windows), et n'écrit rien.
 
 Deux commandes explicites utilisent le réseau, et elles seules :
 
-- `attackscout-agent db update` télécharge les archives OSV (`all.zip`) de npm, Packagist, PyPI, NuGet et Go depuis `https://osv-vulnerabilities.storage.googleapis.com`, dans le répertoire de cache de l'utilisateur (`--db` pour le changer). Rien sur votre serveur n'est envoyé.
+- `attackscout-agent db update` télécharge les archives OSV (`all.zip`) de chaque écosystème depuis `https://osv-vulnerabilities.storage.googleapis.com`, la liste KEV depuis `https://www.cisa.gov` et les données de `https://endoflife.date`, dans le répertoire de cache de l'utilisateur (`--db` pour le changer). Rien sur votre serveur n'est envoyé.
 - `attackscout-agent scan --online` envoie à `https://api.osv.dev` le **nom, la version et l'écosystème** de chaque paquet, puis récupère le détail des vulnérabilités correspondantes par leur identifiant. Aucun chemin, nom de fichier, nom de machine ni nom de domaine n'est envoyé. Les paquets npm locaux (liens `file:`) ne sont pas envoyés.
 
 Sans base locale et sans `--online`, le rapport indique « CVE non vérifiées » au lieu d'affirmer qu'il n'y en a pas.
@@ -203,7 +229,7 @@ Il vérifie des fichiers de certificats PEM : ceux que vous passez avec `--cert`
 
 ### Puis-je l'utiliser dans une chaîne de CI ?
 
-Oui. Utilisez `--fail-on high` (ou une autre sévérité) : le job échoue avec le code `1`. Utilisez `--json` pour garder le rapport comme artefact. Voir [use in CI](docs/ci-integration.md) (en anglais).
+Oui. Il existe une action GitHub avec envoi du SARIF vers l'onglet Sécurité, un modèle GitLab CI, et un modèle et une tâche Azure DevOps. Utilisez `--fail-on high` (ou une autre sévérité) : le job échoue avec le code `1`. Voir [use in CI](docs/ci-integration.md) (en anglais).
 
 ### Fonctionne-t-il sous Windows ?
 
@@ -211,16 +237,17 @@ Oui. Il s'exécute sous Windows et contrôle le `web.config` d'IIS, nginx et Apa
 
 ## Vérifiez aussi votre site depuis l'extérieur
 
-Cet outil voit l'intérieur de votre serveur. Il ne voit pas ce que voit un visiteur ou un scanner : les en-têtes réellement envoyés par votre proxy ou votre CDN, ce qui est joignable depuis Internet, ou le certificat réellement servi. Pour cela, lancez l'audit externe de votre domaine sur [attackscout.com/fr](https://attackscout.com/fr?utm_source=cli&utm_medium=cli&utm_campaign=attackscout-agent).
+Cet outil voit l'intérieur de votre serveur. Il ne voit pas ce que voit un visiteur ou un scanner : les en-têtes réellement envoyés par votre proxy ou votre CDN, ce qui est joignable depuis Internet, ou le certificat réellement servi. Pour cela, lancez l'audit externe de votre domaine sur [attackscout.com/fr](https://attackscout.com/fr?utm_source=attackscout-agent&utm_medium=readme&utm_campaign=readme).
 
 ## Limites
 
 - La comparaison des versions est faite par osv-scalibr : SemVer pour npm, règles Composer pour Packagist, PEP 440 pour PyPI, règles NuGet et Go. Les noms de branches Composer (`dev-main`) ne sont pas comparables.
 - Une contrainte (`requests>=2.20`, référence `.csproj`, Terraform `~> 5.0`) est remplacée par sa plus petite version : certitude `medium`.
 - `vendor/composer/installed.json` n'est pas lu : `composer.lock` l'est.
-- OSV ne couvre ni WordPress, ni les extensions Joomla, ni PHP lui-même : ces versions ne sont contrôlées que pour la fin de vie, et signalées « CVE non vérifiées ».
+- OSV ne couvre ni les extensions et thèmes WordPress, ni les extensions Joomla, ni les numéros de version de PHP, nginx et Apache : ils ne sont contrôlés que pour la fin de vie, et signalés « CVE non vérifiées ». Les versions de PHP, nginx et Apache fournies par la distribution sont vérifiées via leur paquet dpkg / rpm / apk.
+- Les versions d'un `pom.xml` définies par des propriétés ou un POM parent sont ignorées : aucune résolution réseau.
 - Terraform et OpenTofu : les versions sont listées, la configuration n'est pas analysée. [tfsec](https://github.com/aquasecurity/tfsec) et [Checkov](https://github.com/bridgecrewio/checkov) le font.
-- La table de fin de vie est aussi récente que la version que vous utilisez.
+- Sans `db update`, la table de fin de vie est aussi récente que la version que vous utilisez.
 - Les droits ne sont pas contrôlés sous Windows.
 
 ## Développement

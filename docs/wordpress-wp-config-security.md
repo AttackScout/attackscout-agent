@@ -37,6 +37,6 @@ A copy of the file left in the web root (`wp-config.php.bak`) is reported as a c
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [Exposed files](exposed-files-web-root.md) | [File permissions](file-permissions.md) | [End of life](end-of-life-software.md)

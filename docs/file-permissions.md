@@ -14,6 +14,7 @@ attackscout-agent scan --root /var/www/site
 | `perm-dir-world-writable` | high | Directory writable by others, without the sticky bit |
 | `perm-file-world-writable` | high | File writable by others |
 | `perm-secret-world-readable` | medium | `wp-config.php`, `.env`, `settings.php`, `configuration.php`, `parameters.php` or `auth.json` readable by others |
+| `perm-wpconfig-group-writable` | low | `wp-config.php` writable by its group: use `640` or `600` |
 
 Symbolic links are skipped. At most 20 findings are listed per rule; the rest is counted in one summary line.
 
@@ -29,6 +30,6 @@ On Windows the check is reported `not_applicable`: Unix permission bits do not e
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [Exposed files](exposed-files-web-root.md) | [wp-config.php](wordpress-wp-config-security.md) | [Command line](command-line-reference.md)

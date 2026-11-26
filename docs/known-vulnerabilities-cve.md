@@ -1,4 +1,4 @@
-# Find known vulnerabilities (CVE) in npm, Composer, PyPI, NuGet and Go dependencies on your server
+# Find known vulnerabilities (CVE) in npm, Composer, PyPI, RubyGems, Go, NuGet, Maven and system packages on your server
 
 `attackscout-agent` matches the dependencies it finds on the server against the [OSV](https://osv.dev) vulnerability database, with Google's [osv-scalibr](https://github.com/google/osv-scalibr) library (Apache-2.0).
 
@@ -15,9 +15,16 @@ Without a local database and without `--online`, the report says "CVEs not check
 |---|---|
 | npm | `package-lock.json`, `yarn.lock` (v1 and Berry), `pnpm-lock.yaml` |
 | Composer (Packagist) | `composer.lock` |
-| PyPI | `requirements.txt` |
+| PyPI | `requirements.txt`, `poetry.lock` |
+| RubyGems | `Gemfile.lock` |
+| Go | `go.mod`, `go.sum` (when alone), Terraform and OpenTofu providers |
 | NuGet | `packages.lock.json`, `packages.config`, `*.csproj` |
-| Go | Terraform and OpenTofu providers and binaries |
+| Maven | `pom.xml` (literal versions) |
+| Debian, Ubuntu | dpkg database (`/var/lib/dpkg/status`) |
+| Red Hat, Rocky Linux, AlmaLinux, SUSE | rpm database (`/var/lib/rpm`) |
+| Alpine | apk database (`/lib/apk/db/installed`) |
+
+The system databases are read under `--sysroot` (default `/`). The full list, with CMS and web servers, is in [how deep the CVE scan goes](cve-scanning-depth.md).
 
 Use `--project DIR` (repeatable) for directories outside the web root.
 
@@ -26,6 +33,8 @@ Use `--project DIR` (repeatable) for directories outside the web root.
 - **risk**: the CVSS v3.x base score computed from the vector, mapped to a severity (9.0 and above critical, 7.0 high, 4.0 medium, else low). Without a v3 vector, the severity given by the advisory database is used; malicious packages (`MAL-`) are critical.
 - **certainty**: `high` when the exact version was read, `medium` when it was deduced from a constraint such as `requests>=2.20` or a `.csproj` reference.
 - **fix**: the smallest fixed version above the installed one, for example "Upgrade lodash to 4.17.21 or later".
+- **advisory**: a link to `https://osv.dev/vulnerability/<id>`.
+- **exploited in the wild**: when the CVE is in the CISA KEV catalog (downloaded by `db update`), the finding is critical whatever its score, and the JSON report sets `known_exploited: true`.
 
 The finding identifier is `vulnerable-component`.
 
@@ -43,6 +52,6 @@ Online or offline? See [network and offline use](offline-and-network.md).
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [End of life](end-of-life-software.md) | [Network](offline-and-network.md) | [CI](ci-integration.md) | [Command line](command-line-reference.md)

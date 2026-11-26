@@ -17,6 +17,7 @@ attackscout-agent scan --root /var/www/site
 | `sensitive-vcs` | high | `.git/`, `.svn/`, `.hg/`, `.bzr/` |
 | `sensitive-backup` | high; critical for database dumps and copies of `wp-config` or `.env` | `.sql`, `.sql.gz`, `.dump`, `.zip`, `.tar`, `.tar.gz`, `.tgz`, `.7z`, `.rar`, `.bak`, `.old`, `.orig`, `.save`, `.swp`, names ending in `~` |
 | `sensitive-phpinfo` | medium | `phpinfo.php`, `info.php`, `php_info.php` |
+| `phpinfo-exposed` | medium | any other PHP file of 64 KB or less, three levels deep at most, that calls `phpinfo()` outside a comment (CMS cores and `vendor/` skipped). This is the only check that opens a file of the web root, to look for that call |
 | `sensitive-ds-store` | low | `.DS_Store` |
 | `sensitive-composer` | low | `composer.json`, `composer.lock` at the root |
 | `sensitive-auth-json` | critical | `auth.json` |
@@ -37,6 +38,6 @@ The scan looks at the file system, not at your site. A file may be blocked by a 
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [File permissions](file-permissions.md) | [wp-config.php](wordpress-wp-config-security.md) | [Headers](web-server-security-headers.md) | [Command line](command-line-reference.md)

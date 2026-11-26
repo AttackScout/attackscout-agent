@@ -8,40 +8,45 @@ attackscout-agent scan --root . --project . --fail-on high
 
 Severities, from lowest: `info`, `low`, `medium`, `high`, `critical`. The default is `none`: the command never fails because of findings.
 
+Ready-made integrations, with SARIF reports:
+
+- [GitHub Actions](github-actions.md): `uses: AttackScout/attackscout-agent@v0.2.0`, alerts in the Security tab.
+- [GitLab CI](gitlab-ci.md): `include:` the template, SARIF and JSON artifacts.
+- [Azure DevOps](azure-devops.md): YAML template or the `AttackScoutAgent@0` task, Scans tab.
+
 ## GitHub Actions
 
 ```yaml
 name: security-check
 on: [push]
+permissions:
+  contents: read
+  security-events: write
 jobs:
   scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: AttackScout/attackscout-agent@v0.2.0
         with:
-          go-version: "1.26"
-      - run: go install github.com/attackscout/attackscout-agent@latest
-      - run: attackscout-agent db update
-      - run: attackscout-agent scan --root . --project . --json > report.json
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: security-report
-          path: report.json
-      - run: attackscout-agent scan --root . --project . --fail-on high
+          fail-on: high
 ```
 
 ## GitLab CI
 
 ```yaml
-security-check:
-  image: golang:1.26
-  script:
-    - go install github.com/attackscout/attackscout-agent@latest
-    - export PATH="$PATH:$(go env GOPATH)/bin"
-    - attackscout-agent db update
-    - attackscout-agent scan --root . --project . --fail-on high
+include:
+  - remote: https://raw.githubusercontent.com/AttackScout/attackscout-agent/v0.2.0/ci/gitlab/attackscout-agent.gitlab-ci.yml
+```
+
+## Azure Pipelines
+
+```yaml
+steps:
+  - checkout: self
+  - template: ci/attackscout-agent.yml   # copied from ci/azure-devops/
+    parameters:
+      failOn: high
 ```
 
 ## Cron on a server
@@ -55,12 +60,13 @@ security-check:
 - A CI runner sees the checked-out project, not your production server. In CI it is most useful for lockfiles and Terraform files (`--project`); the file and configuration checks need the real web root and configuration, so run those on the server.
 - `attackscout-agent db update` is the only step that needs the network. Keep the database directory (`--db DIR`) between runs to avoid downloading it each time. See [network and offline use](offline-and-network.md).
 - Exit code `2` means a usage error (unknown flag, unknown language, unknown severity).
-- `--json` gives a structure with `checks`, `findings` and `components` for scripts.
+- `--format json` gives a structure with `checks`, `findings` and `components` for scripts; `--format sarif --output results.sarif` feeds code scanning tools.
+- `--no-audit-link` removes the closing link of the text report from CI logs.
 
 ---
 
 ## Check your site from the outside too
 
-attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=cli&utm_medium=docs&utm_campaign=attackscout-agent).
+attackscout-agent sees the inside of your server. To see what the Internet sees of your domain, run the free external audit at [attackscout.com/en](https://attackscout.com/en?utm_source=attackscout-agent&utm_medium=docs&utm_campaign=docs).
 
 [Documentation index](index.md) | [Command line](command-line-reference.md) | [Network](offline-and-network.md) | [Known vulnerabilities](known-vulnerabilities-cve.md)
