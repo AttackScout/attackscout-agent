@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.9.0.schema.json
+# The SHA256 values come from checksums.txt of the GitHub release:
+# run packaging/winget/fill-checksums.ps1 after the release is published.
+PackageIdentifier: AttackScout.AttackscoutAgent
+PackageVersion: 0.2.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: attackscout-agent.exe
+    PortableCommandAlias: attackscout-agent
+ReleaseDate: 2026-11-26
+Installers:
+  - Architecture: x64
+    InstallerUrl: https://github.com/AttackScout/attackscout-agent/releases/download/v0.2.0/attackscout-agent_0.2.0_windows_amd64.zip
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+  - Architecture: arm64
+    InstallerUrl: https://github.com/AttackScout/attackscout-agent/releases/download/v0.2.0/attackscout-agent_0.2.0_windows_arm64.zip
+    InstallerSha256: 0000000000000000000000000000000000000000000000000000000000000000
+ManifestType: installer
+ManifestVersion: 1.9.0

@@ -1,5 +1,10 @@
-# Build archives and checksums for a release. Run "goreleaser release --clean"
-# from a tag; nothing is published by this file alone.
+# Release configuration. Run "goreleaser release --clean" from a tag; nothing
+# is published by this file alone. Publishing needs:
+#   - GITHUB_TOKEN with access to AttackScout/attackscout-agent (release);
+#   - HOMEBREW_TAP_GITHUB_TOKEN for AttackScout/homebrew-tap (formula);
+#   - SCOOP_BUCKET_GITHUB_TOKEN for AttackScout/scoop-bucket (manifest);
+#   - "docker login ghcr.io" with a token that can push packages.
+# The winget manifests are prepared in packaging/winget.
 version: 2
 
 project_name: attackscout-agent
@@ -33,6 +38,7 @@ archives:
       - NOTICE
       - README.md
       - README.fr.md
+      - CHANGELOG.md
 
 checksum:
   name_template: checksums.txt
@@ -45,4 +51,55 @@ changelog:
   sort: asc
 
 release:
+  github:
+    owner: AttackScout
+    name: attackscout-agent
   draft: true
+
+homebrew_casks:
+  - name: attackscout-agent
+    repository:
+      owner: AttackScout
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Casks
+    homepage: https://github.com/AttackScout/attackscout-agent
+    description: Read-only website security check from inside the server (CVE, KEV, end of life, exposed files)
+    license: MIT
+    commit_msg_template: "attackscout-agent {{ .Tag }}"
+    binaries: [attackscout-agent]
+    hooks:
+      post:
+        install: |
+          if OS.mac?
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/attackscout-agent"]
+          end
+
+scoops:
+  - name: attackscout-agent
+    repository:
+      owner: AttackScout
+      name: scoop-bucket
+      token: "{{ .Env.SCOOP_BUCKET_GITHUB_TOKEN }}"
+    homepage: https://github.com/AttackScout/attackscout-agent
+    description: Read-only website security check from inside the server (CVE, KEV, end of life, exposed files)
+    license: MIT
+    commit_msg_template: "attackscout-agent {{ .Tag }}"
+
+dockers_v2:
+  - id: image
+    dockerfile: Dockerfile
+    images:
+      - ghcr.io/attackscout/attackscout-agent
+    tags:
+      - "{{ .Version }}"
+      - latest
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      org.opencontainers.image.title: attackscout-agent
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.revision: "{{ .FullCommit }}"
+      org.opencontainers.image.source: https://github.com/AttackScout/attackscout-agent
+      org.opencontainers.image.licenses: MIT

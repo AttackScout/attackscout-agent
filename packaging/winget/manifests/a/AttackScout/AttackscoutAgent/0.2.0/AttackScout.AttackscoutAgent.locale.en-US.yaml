@@ -1,0 +1,27 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.9.0.schema.json
+PackageIdentifier: AttackScout.AttackscoutAgent
+PackageVersion: 0.2.0
+PackageLocale: en-US
+Publisher: AttackScout
+PublisherUrl: https://attackscout.com/en
+PublisherSupportUrl: https://github.com/AttackScout/attackscout-agent/issues
+PackageName: AttackScout agent
+PackageUrl: https://github.com/AttackScout/attackscout-agent
+License: MIT
+LicenseUrl: https://github.com/AttackScout/attackscout-agent/blob/main/LICENSE
+ShortDescription: Read-only website security check from inside the server.
+Description: |-
+  attackscout-agent checks a website from inside its server or repository: known CVEs (OSV) flagged with the CISA KEV list,
+  end of life (endoflife.date), exposed .git, .env and backups, phpinfo pages, permissions, wp-config.php and web server
+  configuration. It only reads, and uses the network only for "db update". Text, JSON and SARIF reports.
+Moniker: attackscout-agent
+Tags:
+  - security
+  - cve
+  - vulnerability
+  - sarif
+  - wordpress
+  - devsecops
+ReleaseNotesUrl: https://github.com/AttackScout/attackscout-agent/blob/main/CHANGELOG.md
+ManifestType: defaultLocale
+ManifestVersion: 1.9.0
